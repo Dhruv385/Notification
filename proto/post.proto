@@ -1,0 +1,23 @@
+syntax="proto3";
+
+package post;
+
+service postService {
+    rpc CreatePost(CreatePostRequest) returns (PostResponse) {}
+    rpc DeletePost(DeletePostRequest) returns (PostResponse) {}
+}
+
+message CreatePostRequest {
+    string postOwnerId = 1;
+    string postId = 2;
+}
+
+message DeletePostRequest {
+    string postOwnerId = 1;
+    string postId = 2;
+}
+
+message PostResponse {
+    string message = 1;
+    bool success = 2;
+}
