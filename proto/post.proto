@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package postNotification;
+
+service NotificationService {
+  rpc SendPostNotification (SendPostNotificationRequest) returns (SendPostNotificationResponse);
+}
+
+message SendPostNotificationRequest {
+  string userId = 1;
+  string type = 2;
+  string title = 3;
+  string message = 4;
+  map<string, string> post = 5;
+}
+
+message SendPostNotificationResponse {
+  bool success = 1;
+}

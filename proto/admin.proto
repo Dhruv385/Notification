@@ -1,0 +1,35 @@
+syntax="proto3";
+
+package notification;
+
+service notificationService{
+    rpc sendGlobalNotification(SendGlobalNotificationRequest) returns (NotificationResponse);
+    rpc sendUserNotification(SendUserNotification) returns (NotificationResponse);
+}
+
+message SendGlobalNotificationRequest{
+    string title=1;
+    string body =2;
+    string priority=3;
+    string sender=4;
+}
+
+message SendUserNotification{
+    string user_id=1;
+    string title=2;
+    string body=3;
+    string priority=4;
+    string sender=5;
+}
+
+message NotificationResponse{
+    string message =1;
+    bool success=2;
+}
+
+/*protoc \
+  --plugin=protoc-gen-ts_proto=./node_modules/.bin/protoc-gen-ts_proto \
+  --ts_proto_out=src/stubs \
+  --ts_proto_opt=nestJs=true,addGrpcMetadata=true,esModuleInterop=true \
+  -I ./proto \
+  proto/user.proto*/

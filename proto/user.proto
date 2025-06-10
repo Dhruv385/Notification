@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package userNotification;
+
+service UserService {
+  rpc CreateUserNotification(CreateUserRequest) returns (UserResponse) {}
+  rpc Follow(FollowRequest) returns (UserResponse) {}
+}
+
+message CreateUserRequest {
+    string userId = 1;
+}
+
+message FollowRequest {
+  string userId = 1;
+  string targetId = 2;
+}
+
+message UserResponse {
+    string message = 1;
+    string status = 2;
+}
