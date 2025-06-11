@@ -3,17 +3,25 @@ syntax = "proto3";
 package postNotification;
 
 service NotificationService {
-  rpc SendPostNotification (SendPostNotificationRequest) returns (SendPostNotificationResponse);
+  rpc CreatePostNotification (CreatePostNotificationRequest) returns (PostNotificationResponse);
+  rpc DeletePostNotification (DeletePostNotificationRequest) returns (PostNotificationResponse);
 }
 
-message SendPostNotificationRequest {
+message CreatePostNotificationRequest {
   string userId = 1;
   string type = 2;
-  string title = 3;
+  string postId = 3;
   string message = 4;
-  map<string, string> post = 5;
+  repeated string friendUserIds = 5; 
 }
 
-message SendPostNotificationResponse {
-  bool success = 1;
+message DeletePostNotificationRequest {
+  string postId = 1; 
+  string userId = 2;
 }
+
+message PostNotificationResponse {
+    string message = 1;
+    bool success = 2;
+}
+

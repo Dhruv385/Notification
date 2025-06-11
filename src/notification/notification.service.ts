@@ -1,12 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import * as admin from 'firebase-admin';
-import { buildNotificationMessage } from '../../utilis/notification.utilis';
 import { NotificationResponse, SendGlobalNotificationRequest, SendUserNotification } from 'src/stubs/notify';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { NotificationDocument, Notification } from './notification.schema';
 import { CreateUserRequest, FollowRequest, UserResponse } from 'src/stubs/user';
-import { SendPostNotificationRequest, SendPostNotificationResponse } from 'src/stubs/post';
+import { CreatePostNotificationRequest, DeletePostNotificationRequest, PostNotificationResponse} from 'src/stubs/post';
 
 @Injectable()
 export class NotificationService {
@@ -20,23 +19,64 @@ export class NotificationService {
         }
     }
 
-    async sendNotification(token: string, action: string, fromUser?: string, postTitle?: string): Promise<void> {
-      const notifications = [
-        buildNotificationMessage(action as any, {
-          toToken: token,
-          fromUser: fromUser ?? 'Unknown',
-          postTitle: postTitle,
-        }),
-      ];
-    
-      for (const message of notifications) {
-        try {
-          const res = await admin.messaging().send(message);
-          console.log(`${message.notification?.title} sent:`, res);
-        } catch (err) {
-          console.error(`Error sending ${message.notification?.title}:`, err);
-        }
+    async sendTokenToBackend(token: string): Promise<string | null> {
+      try {
+        const response = await fetch('/api/register-device', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            userId: 'user123', 
+            deviceToken: token
+          })
+        });
+        const data = await response.json();
+        console.log('Device token registered:', data);
+        // You can return the token or some success indicator here
+        return token!; // or return null if you want to indicate failure
+      } catch (err) {
+        console.error('Error registering device token:', err);
+        return null; // indicate failure
       }
+    }
+
+    generateNotificationMessage(action: string, postId?: string , fromUser?: string, parentCommentId?: string): string {
+      switch (action) {
+        case 'comment':
+          return `${fromUser ?? 'Someone'} commented on this post: ${postId}`;
+        case 'like':
+          return `${fromUser ?? 'Someone'} liked this post ${postId}`;
+        case 'reply':
+          return `${fromUser ?? 'Someone'} replied on this comment $${parentCommentId}}`;
+        case 'post':
+          return `${fromUser} created a new post: ${postId}`;
+        default:
+          return 'You have a new notification.';
+      }
+    }
+    async sendNotification(token: string, action: string, postId?: string, fromUser?: string, parentCommentId?: string): Promise<void> {
+      const messageText = this.generateNotificationMessage(action, postId, fromUser, parentCommentId);
+      const message = this.buildNotificationMessage(token, messageText);
+  
+      try {
+        const res = await admin.messaging().send(message);
+        console.log(`Notification sent:`, res);
+      } 
+      catch (err) {
+        console.error(`Failed to send notification to user ${token}:`, err);
+        throw err;
+      }
+    }
+  
+    private buildNotificationMessage(token: string, messageText: string) {
+      return {
+        token,
+        notification: {
+          title: 'New Notification',
+          body: messageText,
+        },
+      };
     }
 
     async createNotification(data: {
@@ -99,7 +139,7 @@ export class NotificationService {
           await this.createNotification({
             type: 'create',
             content: `Welcome ${data.userId}!`,
-            fromUser: 'System',
+            fromUser: data.userId,
             toToken: token,
             data: null,
           });
@@ -151,32 +191,43 @@ export class NotificationService {
 
 
     // Post Service
-    async sendPostNotification(data: SendPostNotificationRequest): Promise<SendPostNotificationResponse> {
+    async CreatePostNotification(data: CreatePostNotificationRequest): Promise<PostNotificationResponse> {
       console.log(data);
-      if(!data.userId || !data.post){
-        console.warn('Invalid request or no friends found');
-        return { success: false };
-      }
-
       try{
-        const { type, title, message, post } = data;
-        const friends = Object.entries(post); // [ [friendId1, token1], [friendId2, token2], ... ]
-        for (const [friendId, token] of friends) {
-          console.log(`Notifying ${friendId}`);
-          await this.sendNotification(token, type, data.userId, title);
-          await this.createNotification({
-            type,
-            content: message,
-            toToken: token,
-            fromUser: data.userId,
-            data: { friendId, postTitle: title },
-          });
+        const { userId, type, postId, message, friendUserIds } = data;
+        const friends = friendUserIds;
+        
+        if (!friendUserIds) {
+          throw new Error('friendUserIds is missing or empty');
         }
-        return { success: true };
-      } 
-      catch (err){
-        console.error('Error while sending post notifications:', err);
-        return { success: false };
+        
+        for (const friendId of friends) {
+          const deviceToken = await this.sendTokenToBackend(friendId);
+          if (!deviceToken) {
+            console.warn(`No device token found for user ID: ${friendId}`);
+            continue; 
+          }
+          const notifMessage = this.generateNotificationMessage('post', postId, userId);
+          console.log(`Sending notification to token: ${deviceToken} with message: ${notifMessage}`);
+          await this.sendNotification(deviceToken, notifMessage);
+        }
+        return { message: 'Notifications sent to friends', success: true };
+      }
+      catch(err){
+        throw new Error('Notification not sent',err);
+      }
+    }
+
+
+    async DeletePostNotification(data: DeletePostNotificationRequest): Promise<PostNotificationResponse>{
+      try{
+        const { postId, userId } = data;
+        const messageText = `Post ${postId} has been deleted.`;
+        await this.sendNotification(userId, messageText);
+        return { message: 'Post deletion notifications sent', success: true };
+      }
+      catch(err){
+        throw new Error('Notification not sent',err);
       }
     }
 }

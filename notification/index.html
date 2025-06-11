@@ -88,6 +88,7 @@
             if (currentToken) {
               document.getElementById('tokenDisplay').innerText = currentToken;
               console.log('✅ Token received:', currentToken);
+              sendTokenToBackend(currentToken);
             } else {
               console.log(
                 '⚠️ No registration token available. Request permission first.',

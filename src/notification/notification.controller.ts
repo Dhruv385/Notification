@@ -3,21 +3,22 @@ import { NotificationService } from './notification.service';
 import { SendGlobalNotificationRequest, SendUserNotification } from 'src/stubs/notify';
 import { CreateUserRequest, FollowRequest } from 'src/stubs/user';
 import { GrpcMethod } from '@nestjs/microservices';
-import { SendPostNotificationRequest, SendPostNotificationResponse } from 'src/stubs/post';
+import { CreatePostNotificationRequest, DeletePostNotificationRequest, PostNotificationResponse} from 'src/stubs/post';
 
 @Controller('/notification')
 export class NotificationController {
     constructor(private readonly notificationService: NotificationService) {}
 
     @Post('/send')
-    async sendNotification(@Body('token') token: string){
-        try{
-            await this.notificationService.sendNotification(token, "comment");  
-            return {msg: 'Notification send successfully'};
-        }
-        catch(err){
+    async sendNotification(@Body() body: { token: string; action: string; postId?: string; fromUser?: string;}) {
+        const { token, action, fromUser, postId } = body;
+        try {
+            await this.notificationService.sendNotification(token, action, postId, fromUser);
+            return { msg: 'Notification sent successfully' };
+        } 
+        catch (err) {
             console.error(err);
-            return {msg: err};
+            return { msg: err };
         }
     }
 
@@ -45,8 +46,15 @@ export class NotificationController {
     }
 
     // Post Controller
-    @GrpcMethod('NotificationService', 'SendPostNotification')
-    sendPostNotification(data: SendPostNotificationRequest): Promise<SendPostNotificationResponse> {
-        return this.notificationService.sendPostNotification(data);
+    // @GrpcMethod('NotificationService', 'CreatePostNotification')
+    @Post('/createPostNot')
+    CreatePostNotification(data: CreatePostNotificationRequest): Promise<PostNotificationResponse> {
+        return this.notificationService.CreatePostNotification(data);
+    }
+
+    // @GrpcMethod('NotificationService', 'DeletePostNotification')
+    @Post('/deletePostNot')
+    DeletePostNotification(data: DeletePostNotificationRequest): Promise<PostNotificationResponse> {
+        return this.notificationService.DeletePostNotification(data);
     }
 }

@@ -9,44 +9,55 @@ import { Metadata } from "@grpc/grpc-js";
 import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
 import { Observable } from "rxjs";
 
-export const protobufPackage = "post";
+export const protobufPackage = "postNotification";
 
-export interface SendPostNotificationRequest {
+export interface CreatePostNotificationRequest {
   userId: string;
   type: string;
-  title: string;
+  postId: string;
   message: string;
-  post: { [key: string]: string };
+  friendUserIds: string[];
 }
 
-export interface SendPostNotificationRequest_PostEntry {
-  key: string;
-  value: string;
+export interface DeletePostNotificationRequest {
+  postId: string;
+  userId: string;
 }
 
-export interface SendPostNotificationResponse {
+export interface PostNotificationResponse {
+  message: string;
   success: boolean;
 }
 
-export const POST_PACKAGE_NAME = "post";
+export const POST_NOTIFICATION_PACKAGE_NAME = "postNotification";
 
 export interface NotificationServiceClient {
-  sendPostNotification(
-    request: SendPostNotificationRequest,
+  createPostNotification(
+    request: CreatePostNotificationRequest,
     metadata?: Metadata,
-  ): Observable<SendPostNotificationResponse>;
+  ): Observable<PostNotificationResponse>;
+
+  deletePostNotification(
+    request: DeletePostNotificationRequest,
+    metadata?: Metadata,
+  ): Observable<PostNotificationResponse>;
 }
 
 export interface NotificationServiceController {
-  sendPostNotification(
-    request: SendPostNotificationRequest,
+  createPostNotification(
+    request: CreatePostNotificationRequest,
     metadata?: Metadata,
-  ): Promise<SendPostNotificationResponse> | Observable<SendPostNotificationResponse> | SendPostNotificationResponse;
+  ): Promise<PostNotificationResponse> | Observable<PostNotificationResponse> | PostNotificationResponse;
+
+  deletePostNotification(
+    request: DeletePostNotificationRequest,
+    metadata?: Metadata,
+  ): Promise<PostNotificationResponse> | Observable<PostNotificationResponse> | PostNotificationResponse;
 }
 
 export function NotificationServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["sendPostNotification"];
+    const grpcMethods: string[] = ["createPostNotification", "deletePostNotification"];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("NotificationService", method)(constructor.prototype[method], method, descriptor);
