@@ -46,15 +46,13 @@ export class NotificationController {
     }
 
     // Post Controller
-    // @GrpcMethod('NotificationService', 'CreatePostNotification')
-    @Post('/createPostNot')
-    CreatePostNotification(data: CreatePostNotificationRequest): Promise<PostNotificationResponse> {
+    @GrpcMethod('NotificationService', 'CreatePostNotification')
+    CreatePostNotification(@Body() data: CreatePostNotificationRequest): Promise<PostNotificationResponse> {
         return this.notificationService.CreatePostNotification(data);
     }
 
-    // @GrpcMethod('NotificationService', 'DeletePostNotification')
-    @Post('/deletePostNot')
-    DeletePostNotification(data: DeletePostNotificationRequest): Promise<PostNotificationResponse> {
+    @GrpcMethod('NotificationService', 'DeletePostNotification')
+    DeletePostNotification(@Body() data: DeletePostNotificationRequest): Promise<PostNotificationResponse> {
         return this.notificationService.DeletePostNotification(data);
     }
 }

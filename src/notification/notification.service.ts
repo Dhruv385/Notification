@@ -194,13 +194,14 @@ export class NotificationService {
     async CreatePostNotification(data: CreatePostNotificationRequest): Promise<PostNotificationResponse> {
       console.log(data);
       try{
+        console.log(data);
         const { userId, type, postId, message, friendUserIds } = data;
         const friends = friendUserIds;
         
         if (!friendUserIds) {
           throw new Error('friendUserIds is missing or empty');
         }
-        
+        console.log(data);
         for (const friendId of friends) {
           const deviceToken = await this.sendTokenToBackend(friendId);
           if (!deviceToken) {
