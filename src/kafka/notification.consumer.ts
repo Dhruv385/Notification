@@ -41,6 +41,7 @@ export class NotificationConsumer implements OnModuleInit, OnModuleDestroy {
         postOwnerId,
         'Like',
         postId,
+        '',
         commenterId,
         
       );
@@ -62,6 +63,7 @@ export class NotificationConsumer implements OnModuleInit, OnModuleDestroy {
         postOwnerId,
         'comment',
         postId,
+        '',
         commenterId,
       );
     }
@@ -81,6 +83,8 @@ export class NotificationConsumer implements OnModuleInit, OnModuleDestroy {
         userId,
         'Reply',
         postId,
+        '',
+        '',
         replyToUserId
       )
     }

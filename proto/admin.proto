@@ -3,23 +3,19 @@ syntax="proto3";
 package notification;
 
 service notificationService{
-    rpc sendGlobalNotification(SendGlobalNotificationRequest) returns (NotificationResponse);
-    rpc sendUserNotification(SendUserNotification) returns (NotificationResponse);
+    rpc sendGlobalNotification(SendGlobalNotificationRequest) returns (NotificationResponse) {};
+    rpc sendUserNotification(SendUserNotification) returns (NotificationResponse) {};
 }
 
 message SendGlobalNotificationRequest{
     string title=1;
     string body =2;
-    string priority=3;
-    string sender=4;
 }
 
 message SendUserNotification{
     string user_id=1;
     string title=2;
     string body=3;
-    string priority=4;
-    string sender=5;
 }
 
 message NotificationResponse{

@@ -3,14 +3,14 @@ import { NotificationService } from './notification.service';
 import { SendGlobalNotificationRequest, SendUserNotification } from 'src/stubs/notify';
 import { CreateUserRequest, FollowRequest } from 'src/stubs/user';
 import { GrpcMethod } from '@nestjs/microservices';
-import { CreatePostNotificationRequest, DeletePostNotificationRequest, PostNotificationResponse} from 'src/stubs/post';
+import { TagNotificationRequest } from 'src/stubs/post';
 
 @Controller('/notification')
 export class NotificationController {
     constructor(private readonly notificationService: NotificationService) {}
 
     @Post('/send')
-    async sendNotification(@Body() body: { token: string; action: string; postId?: string; fromUser?: string;}) {
+    async sendNotification(@Body() body: { token: string; action: string; postId?: string; fromUser?: string; }) {
         const { token, action, fromUser, postId } = body;
         try {
             await this.notificationService.sendNotification(token, action, postId, fromUser);
@@ -46,13 +46,9 @@ export class NotificationController {
     }
 
     // Post Controller
-    @GrpcMethod('NotificationService', 'CreatePostNotification')
-    CreatePostNotification(@Body() data: CreatePostNotificationRequest): Promise<PostNotificationResponse> {
-        return this.notificationService.CreatePostNotification(data);
+    @GrpcMethod('', 'mentionNotification')
+    mentionNotification(@Body() body: TagNotificationRequest){
+        return this.notificationService.mentionNotification(body);
     }
 
-    @GrpcMethod('NotificationService', 'DeletePostNotification')
-    DeletePostNotification(@Body() data: DeletePostNotificationRequest): Promise<PostNotificationResponse> {
-        return this.notificationService.DeletePostNotification(data);
-    }
 }

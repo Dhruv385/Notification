@@ -39,13 +39,13 @@
       } from 'https://www.gstatic.com/firebasejs/10.10.0/firebase-messaging.js';
 
       const firebaseConfig = {
-        apiKey: api_Key,
-        authDomain: auth_Domain,
-        projectId: project_Id,
-        storageBucket: storage_Bucket,
-        messagingSenderId: messaging_Sender_Id,
-        appId: app_Id,
-        measurementId: measurement_Id,
+        apiKey: "AIzaSyDTH8dvQznTaJRnl8NbZHPfMIMWLplKZvo",
+        authDomain: "my-project-f3fb8.firebaseapp.com",
+        projectId: "my-project-f3fb8",
+        storageBucket: "my-project-f3fb8.firebasestorage.app",
+        messagingSenderId: "880241752809",
+        appId: "1:880241752809:web:0306aaf550a9f8ee388e78",
+        measurementId: "G-HL1P162Q1J"
       };
 
       const app = initializeApp(firebaseConfig);
@@ -83,12 +83,11 @@
       }
 
       function getFCMToken() {
-        getToken(messaging, {vapidKey: vapid_Key})
+        getToken(messaging, {vapidKey: 'BLvNuY9Y68_bC0ZVee7U4A7hUPKokV5X4nZWWMsQXui3l-kybkYAWjGEvq4iyGmIey_0UP9WPxQ1f09Cs4EGZu8'})
           .then((currentToken) => {
             if (currentToken) {
               document.getElementById('tokenDisplay').innerText = currentToken;
               console.log('✅ Token received:', currentToken);
-              sendTokenToBackend(currentToken);
             } else {
               console.log(
                 '⚠️ No registration token available. Request permission first.',

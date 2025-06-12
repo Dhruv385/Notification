@@ -11,20 +11,13 @@ import { Observable } from "rxjs";
 
 export const protobufPackage = "postNotification";
 
-export interface CreatePostNotificationRequest {
+export interface TagNotificationRequest {
   userId: string;
-  type: string;
   postId: string;
-  message: string;
-  friendUserIds: string[];
+  TagedUserIds: string[];
 }
 
-export interface DeletePostNotificationRequest {
-  postId: string;
-  userId: string;
-}
-
-export interface PostNotificationResponse {
+export interface TagNotificationResponse {
   message: string;
   success: boolean;
 }
@@ -32,32 +25,19 @@ export interface PostNotificationResponse {
 export const POST_NOTIFICATION_PACKAGE_NAME = "postNotification";
 
 export interface NotificationServiceClient {
-  createPostNotification(
-    request: CreatePostNotificationRequest,
-    metadata?: Metadata,
-  ): Observable<PostNotificationResponse>;
-
-  deletePostNotification(
-    request: DeletePostNotificationRequest,
-    metadata?: Metadata,
-  ): Observable<PostNotificationResponse>;
+  tagNotification(request: TagNotificationRequest, metadata?: Metadata): Observable<TagNotificationResponse>;
 }
 
 export interface NotificationServiceController {
-  createPostNotification(
-    request: CreatePostNotificationRequest,
+  tagNotification(
+    request: TagNotificationRequest,
     metadata?: Metadata,
-  ): Promise<PostNotificationResponse> | Observable<PostNotificationResponse> | PostNotificationResponse;
-
-  deletePostNotification(
-    request: DeletePostNotificationRequest,
-    metadata?: Metadata,
-  ): Promise<PostNotificationResponse> | Observable<PostNotificationResponse> | PostNotificationResponse;
+  ): Promise<TagNotificationResponse> | Observable<TagNotificationResponse> | TagNotificationResponse;
 }
 
 export function NotificationServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["createPostNotification", "deletePostNotification"];
+    const grpcMethods: string[] = ["tagNotification"];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("NotificationService", method)(constructor.prototype[method], method, descriptor);

@@ -3,24 +3,16 @@ syntax = "proto3";
 package postNotification;
 
 service NotificationService {
-  rpc CreatePostNotification (CreatePostNotificationRequest) returns (PostNotificationResponse);
-  rpc DeletePostNotification (DeletePostNotificationRequest) returns (PostNotificationResponse);
+    rpc TagNotification(TagNotificationRequest) returns (TagNotificationResponse) {};
 }
 
-message CreatePostNotificationRequest {
+message TagNotificationRequest {
   string userId = 1;
-  string type = 2;
-  string postId = 3;
-  string message = 4;
-  repeated string friendUserIds = 5; 
+  string postId = 2;
+  repeated string TagedUserIds = 4; 
 }
 
-message DeletePostNotificationRequest {
-  string postId = 1; 
-  string userId = 2;
-}
-
-message PostNotificationResponse {
+message TagNotificationResponse {
     string message = 1;
     bool success = 2;
 }

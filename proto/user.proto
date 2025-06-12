@@ -20,3 +20,12 @@ message UserResponse {
     string message = 1;
     string status = 2;
 }
+
+message TokenrRequest {
+  string type = 1;
+  string user_id = 2;
+}
+
+message TokenrResponse {
+  repeated string tokens = 1;
+}
