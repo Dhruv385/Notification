@@ -39,17 +39,17 @@ export class NotificationService {
           return 'You have a new notification.';
       }
     }
-    async sendNotification(token: string, action: string, postId?: string, fromUser?: string, parentCommentId?: string, replyToUserId?: string): Promise<void> {
-      const messageText = this.generateNotificationMessage(token, action, postId, fromUser, parentCommentId, replyToUserId);
+    async sendNotification(userId: string, action: string, postId?: string, fromUser?: string, parentCommentId?: string, replyToUserId?: string): Promise<void> {
+      const messageText = this.generateNotificationMessage(userId, action, postId, fromUser, parentCommentId, replyToUserId);
 
-      const message = this.buildNotificationMessage(token, messageText);
+      const message = this.buildNotificationMessage(userId, messageText);
   
       try {
         const res = await admin.messaging().send(message);
         console.log(`Notification sent:`, res);
       } 
       catch (err) {
-        console.error(`Failed to send notification to user ${token}:`, err);
+        console.error(`Failed to send notification to user ${userId}:`, err);
         throw err;
       }
     }
@@ -62,9 +62,9 @@ export class NotificationService {
     
       try {
         const res = await admin.messaging().send(message);
-        console.log(`✅ Notification sent to ${token}:`, res);
+        console.log(`Notification sent to ${token}:`, res);
       } catch (err) {
-        console.error(`❌ Failed to send to ${token}:`, err);
+        console.error(`Failed to send to ${token}:`, err);
       }
     }
   
