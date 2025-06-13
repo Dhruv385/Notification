@@ -15,6 +15,7 @@ export class NotificationConsumer implements OnModuleInit, OnModuleDestroy {
 
     this.consumer = this.kafka.consumer({
       groupId: 'notification-consumer',
+      
     });
   }
 
