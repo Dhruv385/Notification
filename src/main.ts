@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import * as dotenv from 'dotenv';
 import { join } from 'path';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import * as portoLoader from '@grpc/proto-loader'
 dotenv.config();
 
 async function bootstrap() {
