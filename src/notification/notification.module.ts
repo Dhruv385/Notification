@@ -4,10 +4,14 @@ import { NotificationController } from './notification.controller';
 import { NotificationSchema } from './notification.schema';
 import { MongooseModule } from '@nestjs/mongoose';
 import {  Notification } from './notification.schema';
+import { UserSession, UserSessionSchema } from 'src/schema/user-session.schema';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Notification.name, schema: NotificationSchema }])
+    MongooseModule.forFeature([{ name: Notification.name, schema: NotificationSchema }]),
+    MongooseModule.forFeature([
+      { name: UserSession.name, schema: UserSessionSchema, collection: 'usersessions' }
+    ]),
   ],
   providers: [NotificationService],
   controllers: [NotificationController],

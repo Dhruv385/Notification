@@ -1,16 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { NotificationResponse, SendGlobalNotificationRequest, SendUserNotification } from 'src/stubs/notify';
-import { Model } from 'mongoose';
-import { InjectModel } from '@nestjs/mongoose';
+import mongoose, { Model, Connection, Types } from 'mongoose';
+import { InjectConnection, InjectModel, ParseObjectIdPipe } from '@nestjs/mongoose';
 import { NotificationDocument, Notification } from './notification.schema';
 import { CreateUserRequest, FollowRequest, UserResponse } from 'src/stubs/user';
 import { TagNotificationRequest, TagNotificationResponse } from 'src/stubs/post';
 
+import { ObjectId } from 'mongoose';
+import { UserSession } from 'src/schema/user-session.schema';
+
 @Injectable()
 export class NotificationService {
-    constructor(@InjectModel(Notification.name) private notificationModel: Model<NotificationDocument>){
-        const serviceAccount = require('/home/user/Assignment/Notification/firebase.json');
+    constructor(@InjectModel(Notification.name) private notificationModel: Model<NotificationDocument>,
+    @InjectModel(UserSession.name)
+    private readonly userSessionModel: Model<UserSession>,
+    @InjectConnection() private readonly connection: Connection){
+        const serviceAccount = require('/home/user/Assignment/social_media/Notification/firebase.json');
 
         if (!admin.apps.length) {
             admin.initializeApp({
@@ -45,6 +51,14 @@ export class NotificationService {
       const message = this.buildNotificationMessage(userId, messageText);
   
       try {
+        const correctId = '6848122613173af6024ef1ea';
+       
+        const user = await this.userSessionModel.findOne({
+          userId: '890e3e805be127abc1234721',
+        });
+        
+        console.log(user);          
+        
         const res = await admin.messaging().send(message);
         console.log(`Notification sent:`, res);
       } 
@@ -110,9 +124,10 @@ export class NotificationService {
 
       try {
         // Fetch all user tokens from your user DB or session DB
-        const users = await this.notificationModel.find({}); // todo 1- add databse name here
-    
-        const tokens = users.map((user) => user.toToken).filter(Boolean);
+        // @ts-ignore
+        const users = await this.userSessionModel.findOne({fcmToken}); // todo 1- add databse name here
+        // @ts-ignore
+        const tokens = users?.map((user) => user.toToken).filter(Boolean);
     
         if (!tokens.length) {
           return {
@@ -152,7 +167,8 @@ export class NotificationService {
       console.log(data);
       try {
         // Fetch user token from your user DB or session DB
-        const user = await this.notificationModel.find({}); // todo 2- add databse name here
+        // @ts-ignore
+        const user = await this.userSessionModel.findOne({fcmToken});// todo 2- add databse name here
         //@ts-ignore          
         const tokens = user.token;
     
@@ -197,7 +213,8 @@ export class NotificationService {
         };
       }
       try{
-        const user = await this.notificationModel.find({}); // todo 3- add databse name here (remove the ts ignore)
+        // @ts-ignore
+        const user = await this.userSessionModel.findOne({fcmToken}); // todo 3- add databse name here (remove the ts ignore)
         //@ts-ignore          
         const token = user.token;
         if (token) {
@@ -231,7 +248,8 @@ export class NotificationService {
       }
     
       try{
-        const user = await this.notificationModel.find({}); // todo 4- add databse name here
+        // @ts-ignore
+        const user = await this.userSessionModel.findOne({fcmToken}); // todo 4- add databse name here
         //@ts-ignore
         const token = user.token;
         if (token) {
@@ -257,6 +275,7 @@ export class NotificationService {
     }
 
 
+    // Post Service
     async mentionNotification(data: TagNotificationRequest): Promise<TagNotificationResponse> {
       try {
         // Step 1: Fetch tokens of tagged users
