@@ -1,10 +1,9 @@
 import { Module } from '@nestjs/common';
-import { NotificationService } from './notification.service';
-import { NotificationController } from './notification.controller';
-import { NotificationSchema } from '../schema/notification.schema';
 import { MongooseModule } from '@nestjs/mongoose';
-import {  Notification } from '../schema/notification.schema';
 import { UserSession, UserSessionSchema } from 'src/schema/user-session.schema';
+import { PostNotifyService } from './postNotify.service';
+import { PostNotifyController } from './postNotify.controller';
+import { NotificationSchema, Notification } from 'src/schema/notification.schema';
 
 @Module({
   imports: [
@@ -13,8 +12,7 @@ import { UserSession, UserSessionSchema } from 'src/schema/user-session.schema';
       { name: UserSession.name, schema: UserSessionSchema, collection: 'usersessions' }
     ]),
   ],
-  providers: [NotificationService],
-  controllers: [NotificationController],
-  exports: [NotificationService]
+  providers: [PostNotifyService],
+  controllers: [PostNotifyController]
 })
-export class NotificationModule {}
+export class PostNotifyModule {}

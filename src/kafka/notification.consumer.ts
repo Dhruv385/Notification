@@ -28,7 +28,7 @@ export class NotificationConsumer implements OnModuleInit, OnModuleDestroy {
     await this.consumer.subscribe({ topic: 'post.reply', fromBeginning: true });
 
     await this.consumer.run({
-      eachMessage: async ({ topic, partition, message }) => {
+      eachMessage: async ({ topic, message }) => {
         const value = message.value?.toString();
         const data = value ? JSON.parse(value) : {};
 
@@ -39,10 +39,10 @@ export class NotificationConsumer implements OnModuleInit, OnModuleDestroy {
             case 'post.react': {
               const { postId, userId, postOwnerId } = data;
               await this.notificationService.sendNotification(
-                userId,
+                postOwnerId,
                 'like',
                 postId,
-                postOwnerId
+                userId,
               );
               break;
             }
@@ -50,23 +50,22 @@ export class NotificationConsumer implements OnModuleInit, OnModuleDestroy {
             case 'post.comment': {
               const { postId, userId, postOwnerId } = data;
               await this.notificationService.sendNotification(
-                userId,
+                postOwnerId,
                 'comment',
                 postId,
-                postOwnerId
+                userId,
               );
               break;
             }
 
             case 'post.reply': {
-              const { postId, userId, postOwnerId, parentCommentId, replyToUserId } = data;
+              const { postId, userId, parentCommentId, replyToUserId } = data;
               await this.notificationService.sendNotification(
-                userId,
+                replyToUserId,
                 'reply',
                 postId,
-                postOwnerId,
+                userId,
                 parentCommentId,
-                replyToUserId
               );
               break;
             }

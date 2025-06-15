@@ -1,16 +1,18 @@
 import { Module } from '@nestjs/common';
 import { NotificationModule } from './notification/notification.module';
 import * as dotenv from 'dotenv';
-import { NotificationService } from './notification/notification.service';
 import { NotificationConsumer } from './kafka/notification.consumer';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AdminNotifyModule } from './notification/admin/adminNotify.module';
+import { UserNotifyModule } from './notification/user/userNotify.module';
+import { PostNotifyModule } from './notification/post/postNotify.module';
 dotenv.config();
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // Makes ConfigService available globally
+      isGlobal: true, 
     }),
 
     MongooseModule.forRootAsync({
@@ -20,7 +22,10 @@ dotenv.config();
         uri: configService.get<string>('DB_URI'),
       }),
     }),
-    NotificationModule
+    NotificationModule,
+    AdminNotifyModule,
+    UserNotifyModule,
+    PostNotifyModule
   ],
   providers: [NotificationConsumer]
 })
