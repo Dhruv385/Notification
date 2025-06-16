@@ -9,23 +9,17 @@ service UserService {
 
 message CreateUserRequest {
     string userId = 1;
+    string userName = 2;
 }
 
 message FollowRequest {
   string userId = 1;
-  string targetId = 2;
+  string userName = 2;
+  string targetId = 3;
+  bool type = 4;
 }
 
 message UserResponse {
     string message = 1;
     string status = 2;
-}
-
-message TokenrRequest {
-  string type = 1;
-  string user_id = 2;
-}
-
-message TokenrResponse {
-  repeated string tokens = 1;
 }

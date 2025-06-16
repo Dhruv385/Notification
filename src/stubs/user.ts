@@ -13,16 +13,28 @@ export const protobufPackage = "userNotification";
 
 export interface CreateUserRequest {
   userId: string;
+  userName: string;
 }
 
 export interface FollowRequest {
   userId: string;
+  userName: string;
   targetId: string;
+  type: boolean;
 }
 
 export interface UserResponse {
   message: string;
   status: string;
+}
+
+export interface TokenrRequest {
+  type: string;
+  userId: string;
+}
+
+export interface TokenrResponse {
+  tokens: string[];
 }
 
 export const USER_NOTIFICATION_PACKAGE_NAME = "userNotification";

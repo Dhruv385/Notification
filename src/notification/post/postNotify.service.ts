@@ -62,18 +62,19 @@ export class PostNotifyService {
         }
     }
 
-    async createNotification(data: {type: string;content: string;data?: any;toToken: string;fromUser: string;}): Promise<void> {
+    async createNotification(data: {recieverId: string; senderName: string; type: string;content: string; senderId: string; postId: string;}): Promise<void> {
         try {
-            if (!data.type || !data.content || !data.toToken || !data.fromUser) {
+            if (!data.type || !data.content || !data.senderId || !data.postId) {
                 throw new InvalidNotificationInputError('Missing required fields');
             }
             // Save notification to database
             const notification = new this.notificationModel({
+                recieverId: data.recieverId,
+                senderName: data.senderName,
                 type: data.type,
                 content: data.content,
-                data: data.data,
-                toToken: data.toToken,
-                fromUser: data.fromUser,
+                senderId: data.senderId,
+                postId: data.postId,
                 createdAt: new Date()
             });
             await notification.save();
@@ -97,11 +98,12 @@ export class PostNotifyService {
                   const message = `${data.userId} tagged you in a post: ${data.postId}`;
                   await this.sendNotificationForMention(user.fcmToken,'mention',data.postId,data.userId); 
                   await this.createNotification({
+                    recieverId: user.userId,
+                    senderName: data.username,
                     type: 'mention',
                     content: message,
-                    data: { postId: data.postId },
-                    toToken: user.fcmToken,  
-                    fromUser: data.userId,
+                    senderId: data.userId,  
+                    postId: data.postId,
                   });
                 }),
             );

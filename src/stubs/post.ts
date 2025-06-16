@@ -13,6 +13,7 @@ export const protobufPackage = "postNotification";
 
 export interface TagNotificationRequest {
   userId: string;
+  username: string;
   postId: string;
   TagedUserIds: string[];
 }

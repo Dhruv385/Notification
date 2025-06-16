@@ -7,6 +7,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AdminNotifyModule } from './notification/admin/adminNotify.module';
 import { UserNotifyModule } from './notification/user/userNotify.module';
 import { PostNotifyModule } from './notification/post/postNotify.module';
+import { GrpcAuthModule } from './guard/grpc-auth.module';
 dotenv.config();
 
 @Module({
@@ -25,7 +26,8 @@ dotenv.config();
     NotificationModule,
     AdminNotifyModule,
     UserNotifyModule,
-    PostNotifyModule
+    PostNotifyModule,
+    GrpcAuthModule
   ],
   providers: [NotificationConsumer]
 })

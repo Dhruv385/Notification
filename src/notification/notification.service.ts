@@ -17,24 +17,30 @@ export class NotificationService {
         }
     }
 
-    generateNotificationMessage(userId: string, action: string, postId?: string , fromUser?: string, parentCommentId?: string, replyToUserId?: string): string {
+    generateNotificationMessage(userId: string, action: string, postId?: string , fromUser?: string, username?: string, parentCommentId?: string, replyToUserId?: string): string {
       switch (action) {
         case 'comment':
-          return `${fromUser ?? 'Someone'} commented on this post: ${postId}`;
+          return `${userId ?? 'Someone'} commented on this post: ${postId}`;
         case 'like':
-          return `${fromUser ?? 'Someone'} liked this post ${postId}`;
+          return `${userId ?? 'Someone'} liked this post ${postId}`;
         case 'reply':
-          return `${fromUser ?? 'Someone'} replied on this comment $${parentCommentId}}`; 
+          return `${userId ?? 'Someone'} replied on this comment ${parentCommentId}}`; 
         default:
           return 'You have a new notification.';
       }
     }
-    async sendNotification(userId: string, action: string, postId?: string, fromUser?: string, parentCommentId?: string, replyToUserId?: string): Promise<void> {
-
-
-      const messageText = this.generateNotificationMessage(userId, action, postId, fromUser, parentCommentId, replyToUserId);
+    async sendNotification(userId: string, action: string, postId: string | null, fromUser: string | null, username: string | null, parentCommentId?: string, replyToUserId?: string): Promise<void> {
+      const messageText = this.generateNotificationMessage(userId, action, postId as string, fromUser as string, username as string, parentCommentId, replyToUserId);
       console.log("Message text done");
       
+      await this.createNotification({
+        recieverId: userId,
+        senderName: username as string,
+        type: action,
+        content: '',
+        senderId: fromUser as string,
+        postId: postId as string,
+      });
       const message = this.buildNotificationMessage(userId, messageText);
 
       console.log("buildnotification message done");
@@ -62,24 +68,26 @@ export class NotificationService {
     }
 
     async createNotification(data: {
+      recieverId: string;
+      senderName: string;
       type: string;
       content: string;
-      data?: any;
-      toToken: string;
-      fromUser: string;
+      senderId: string;
+      postId: string;
     }): Promise<void> {
         try {
-            if (!data.type || !data.content || !data.toToken) {
+            if (!data.type || !data.content || !data.senderId) {
               throw new InvalidNotificationInputError('Missing required fields.');
             }
 
             // Save notification to database
             const notification = new this.notificationModel({
+                recieverId: data.recieverId,
+                senderName: data.senderName,
                 type: data.type,
                 content: data.content,
-                data: data.data,
-                toToken: data.toToken,
-                fromUser: data.fromUser,
+                senderId: data.senderId,
+                postId: data.postId,
                 createdAt: new Date()
             });
             await notification.save();

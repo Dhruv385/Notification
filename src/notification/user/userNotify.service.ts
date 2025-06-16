@@ -81,18 +81,19 @@ export class UserNotifyService {
         }
     }
 
-    async createNotification(data: {type: string;content: string;data?: any;toToken: string;fromUser: string;}): Promise<void> {
+    async createNotification(data: {recieverId: string; senderName: string; type: string;content: string; senderId: string; postId: string;}): Promise<void> {
         try {
-            if (!data.type || !data.content || !data.toToken || !data.fromUser) {
+            if (!data.type || !data.content || !data.senderId) {
                 throw new InvalidNotificationInputError('Missing required fields');
             }
             // Save notification to database
             const notification = new this.notificationModel({
+                recieverId: data.recieverId,
+                senderName: data.senderName,
                 type: data.type,
                 content: data.content,
-                data: data.data,
-                toToken: data.toToken,
-                fromUser: data.fromUser,
+                senderId: data.senderId,
+                postId: data.postId,
                 createdAt: new Date()
             });
             await notification.save();
@@ -126,11 +127,12 @@ export class UserNotifyService {
               console.log("send notification completed");
               
               await this.createNotification({
+                recieverId: data.userId,
+                senderName: data.userName,
                 type: 'create',
                 content: `Welcome ${data.userId}!`,
-                data: null,
-                toToken: token,
-                fromUser: data.userId,
+                senderId: '',
+                postId: '',
               });
             }
             return {
@@ -162,11 +164,12 @@ export class UserNotifyService {
             if (token) {
               await this.sendNotificationForFollow(token, 'follow', data.userId);
               await this.createNotification({
+                recieverId: data.userId,
+                senderName: data.userName,
                 type: 'follow',
                 content: `${data.userId} followed you`,
-                data: { targetId: data.targetId },
-                toToken: token,
-                fromUser: data.userId,
+                senderId: data.targetId,
+                postId: '',
               });
             }
           

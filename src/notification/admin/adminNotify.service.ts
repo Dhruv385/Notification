@@ -40,18 +40,19 @@ export class AdminNotifyService {
             throw new FirebaseSendError(err.message);
         }
     }
-    async createNotification(data: {type: string;content: string;data?: any;toToken: string;fromUser: string;}): Promise<void> {
+    async createNotification(data: {recieverId: string; senderName: string; type: string; content: string; senderId: string; postId: string;}): Promise<void> {
         try {
-            if (!data.type || !data.content || !data.toToken || !data.fromUser) {
+            if (!data.type || !data.content || !data.senderName || !data.recieverId) {
                 throw new InvalidNotificationInputError('Missing required fields');
             }
             // Save notification to database
             const notification = new this.notificationModel({
+                recieverId: data.recieverId,
+                senderName: data.senderName,
                 type: data.type,
                 content: data.content,
-                data: data.data,
-                toToken: data.toToken,
-                fromUser: data.fromUser,
+                senderId: '',
+                postId: '',
                 createdAt: new Date()
             });
             await notification.save();
@@ -116,11 +117,12 @@ export class AdminNotifyService {
                     await this.sendGlobalUserNotification(token, data.title, data.body);
         
                     await this.createNotification({
-                    type: data.title,
-                    content: data.body,
-                    data: null,
-                    toToken: token,
-                    fromUser: 'System',
+                        recieverId: user.userId,
+                        senderName: '',
+                        type: data.title,
+                        content: data.body,
+                        senderId: 'Admin',
+                        postId: '',
                     });
                 })
             );
@@ -162,11 +164,12 @@ export class AdminNotifyService {
             
             await this.sendFCMNotificationForAdmin(user.userId, data.title, data.body);
             await this.createNotification({
+                recieverId: user.userId,
+                senderName: '',
                 type: data.title,
                 content: data.body,
-                data: null,
-                toToken: tokens,
-                fromUser: 'System',
+                senderId: 'Admin',
+                postId: '',
             });
             return {
               message: 'User notification sent successfully users',
