@@ -2,12 +2,12 @@ import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { GrpcAuthGuard } from 'src/guard/grpc-auth.guard';
 import { InjectModel } from '@nestjs/mongoose';
-import { NotificationDocument } from 'src/schema/notification.schema';
+import { NotificationDocument, Notification } from 'src/schema/notification.schema';
 import { Model } from 'mongoose';
 
 @Controller('/notification')
 export class NotificationController {
-    constructor(private readonly notificationService: NotificationService, @InjectModel(Notification.name) private notificationModel: Model<NotificationDocument>) {}
+    constructor(@InjectModel(Notification.name) private notificationModel: Model<NotificationDocument>) {}
 
     // @Post('/send')
     // async sendNotification(@Body() body: { token: string; action: string; postId?: string; fromUser?: string; }) {
