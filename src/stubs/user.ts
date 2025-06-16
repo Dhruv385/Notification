@@ -11,62 +11,57 @@ import { Observable } from "rxjs";
 
 export const protobufPackage = "userNotification";
 
-export interface CreateUserRequest {
-  userId: string;
-  userName: string;
-}
-
-export interface FollowRequest {
+export interface followRequest {
   userId: string;
   userName: string;
   targetId: string;
   type: boolean;
 }
 
-export interface UserResponse {
+export interface privateFollowRequest {
+  userId: string;
+  userName: string;
+  type: boolean;
+}
+
+export interface SimpleUserResponse {
   message: string;
   status: string;
 }
 
-export interface TokenrRequest {
-  type: string;
-  userId: string;
-}
-
-export interface TokenrResponse {
-  tokens: string[];
-}
-
 export const USER_NOTIFICATION_PACKAGE_NAME = "userNotification";
 
-export interface UserServiceClient {
-  createUserNotification(request: CreateUserRequest, metadata?: Metadata): Observable<UserResponse>;
+export interface NotifyServiceClient {
+  followRequest(request: followRequest, metadata?: Metadata): Observable<SimpleUserResponse>;
 
-  follow(request: FollowRequest, metadata?: Metadata): Observable<UserResponse>;
+  privateFollowRequest(request: privateFollowRequest, metadata?: Metadata): Observable<SimpleUserResponse>;
 }
 
-export interface UserServiceController {
-  createUserNotification(
-    request: CreateUserRequest,
+export interface NotifyServiceController {
+  followRequest(
+    request: followRequest,
     metadata?: Metadata,
-  ): Promise<UserResponse> | Observable<UserResponse> | UserResponse;
+  ): Promise<SimpleUserResponse> | Observable<SimpleUserResponse> | SimpleUserResponse;
 
-  follow(request: FollowRequest, metadata?: Metadata): Promise<UserResponse> | Observable<UserResponse> | UserResponse;
+  privateFollowRequest(
+    request: privateFollowRequest,
+    metadata?: Metadata,
+  ): Promise<SimpleUserResponse> | Observable<SimpleUserResponse> | SimpleUserResponse;
 }
 
-export function UserServiceControllerMethods() {
+export function NotifyServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["createUserNotification", "follow"];
+    const grpcMethods: string[] = ["followRequest", "privateFollowRequest"];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcMethod("UserService", method)(constructor.prototype[method], method, descriptor);
+      GrpcMethod("NotifyService", method)(constructor.prototype[method], method, descriptor);
     }
     const grpcStreamMethods: string[] = [];
     for (const method of grpcStreamMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcStreamMethod("UserService", method)(constructor.prototype[method], method, descriptor);
+      GrpcStreamMethod("NotifyService", method)(constructor.prototype[method], method, descriptor);
     }
   };
 }
 
-export const USER_SERVICE_NAME = "UserService";
+export const NOTIFY_SERVICE_NAME = "NotifyService";

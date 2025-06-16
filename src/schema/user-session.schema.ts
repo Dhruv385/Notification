@@ -22,7 +22,7 @@ export class UserSession extends Document {
   @Prop()
   userAgent?: string;
 
-  @Prop({required: true})
+  @Prop()
   fcmToken?: string;
 }
 

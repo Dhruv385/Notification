@@ -21,25 +21,34 @@ export class AdminNotifyService {
             }
         }
 
-    private async sendGlobalUserNotification(token: string, title: string, body: string) {
-        console.log(token);
-        const message = {
+    private async sendGlobalUserNotification(tokens: string[], title: string, body: string) {
+        const messages = tokens.map((token) => ({
             token,
             notification: {
-              title,
-              body,
+                title,
+                body,
             },
-        };
-        
+        }));
+          
         try {
-            const response = await admin.messaging().send(message);
-            console.log(`Global Notification sent to ${token}:`, response);
+            const results = await Promise.allSettled(messages.map(msg => admin.messaging().send(msg)));
+          
+            const failedTokens: string[] = [];
+            results.forEach((res, i) => {
+                if (res.status === 'rejected') {
+                  console.error(`Failed to send to ${tokens[i]}:`, res.reason);
+                  failedTokens.push(tokens[i]);
+                }
+            });
+          
+            console.log(`Global Notification sent (Success: ${tokens.length - failedTokens.length}, Failed: ${failedTokens.length})`);
         } 
         catch (err) {
-            console.error(`Failed to send global notification to ${token}:`, err);
+            console.error('Error sending global notifications:', err);
             throw new FirebaseSendError(err.message);
         }
     }
+          
     async createNotification(data: {recieverId: string; senderName: string; type: string; content: string; senderId: string; postId: string;}): Promise<void> {
         try {
             if (!data.type || !data.content || !data.senderName || !data.recieverId) {
@@ -67,26 +76,36 @@ export class AdminNotifyService {
     async sendFCMNotificationForAdmin(userId: string,title: string,body: string): Promise<void> {
         try {
             
-            const session = await this.userSessionModel.findOne({ userId });
+            const session = await this.userSessionModel.findOne({ userId, status: 'active' });
       
             if (!session || !session.fcmToken) {
               console.warn(`No FCM token found for user ${userId}`);
               return;
             }
+
+            const tokens = session.fcmToken.split(',').map(t => t.trim()).filter(Boolean);
       
-            const message: admin.messaging.Message = {
-              token: session.fcmToken,
-              notification: {
-                title,
-                body,
-              },
-              data: {
-                userId,
-              },
-            };
-      
-            const response = await admin.messaging().send(message);
-            console.log(`FCM sent to user ${userId}:`, response);
+            const messages = tokens.map(token => ({
+                token,
+                notification: {
+                  title,
+                  body,
+                },
+                data: {
+                  userId,
+                },
+            }));
+          
+            const results = await Promise.allSettled(messages.map(msg => admin.messaging().send(msg)));
+
+            const failedTokens: string[] = [];          
+            results.forEach((res, i) => {
+                if (res.status === 'rejected') {
+                  console.error(`Failed to send to ${tokens[i]}:`, res.reason);
+                  failedTokens.push(tokens[i]);
+                }
+            });
+            console.log(`Notifications sent to user ${userId} (Success: ${tokens.length - failedTokens.length}, Failed: ${failedTokens.length})`);
         } 
         catch (err) {
             console.error(`Error sending FCM to user ${userId}:`, err);
@@ -98,7 +117,7 @@ export class AdminNotifyService {
     async sendGlobalNotification(data: SendGlobalNotificationRequest): Promise<NotificationResponse> {
         try {
             // Fetch all users with FCM tokens
-            const users = await this.userSessionModel.find({ fcmToken: { $exists: true, $ne: null } });
+            const users = await this.userSessionModel.find({ fcmToken: { $exists: true, $ne: null }, status: 'active' });
             // console.log(users);
         
             if (!users.length) {
@@ -111,10 +130,14 @@ export class AdminNotifyService {
             // console.log("hi");
             await Promise.all(
                 users.map(async (user) => {
-                    const token = user?.fcmToken;
+                    const rawTokens = user.fcmToken;
+                    if (!rawTokens) return;
+
+                    const tokens = rawTokens.split(',').map(t => t.trim()).filter(Boolean);
+                    
+                    if (tokens.length === 0) return;
     
-                    if (!token) return;
-                    await this.sendGlobalUserNotification(token, data.title, data.body);
+                    await this.sendGlobalUserNotification(tokens, data.title, data.body);
         
                     await this.createNotification({
                         recieverId: user.userId,
@@ -145,18 +168,17 @@ export class AdminNotifyService {
     async sendUserNotification(data: SendUserNotification): Promise<NotificationResponse>{
         // console.log("this is my user ", data);
         try {
-            const user = await this.userSessionModel.findOne({userId: data.userId});
+            const user = await this.userSessionModel.findOne({userId: data.userId, status: 'active'});
             if(!user){
                 throw new Error('User not found');
             }
             // console.log(user);   
-            const tokens = user?.fcmToken;
-        
-            if (!tokens) {
-              return {
-                message: 'No users found to send notifications',
-                success: false,
-              };
+            const tokens = user?.fcmToken ? user.fcmToken.split(',').map(t => t.trim()).filter(Boolean) : [];
+            if (tokens.length === 0) {
+                return {
+                    message: 'No FCM tokens found for user',
+                    success: false,
+                };
             }
             // console.log("This is my user", user);
             // console.log("This is my user", user.userId);

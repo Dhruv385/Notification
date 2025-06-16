@@ -20,8 +20,8 @@ export class PostNotifyService {
         }
     }
 
-    private async sendNotificationForMention(token: string,type: string,postId: string,fromUser: string): Promise<void> {
-        if (!token) {
+    private async sendNotificationForMention(tokens: string[],type: string,postId: string,fromUser: string): Promise<void> {
+        if (!tokens) {
             console.warn('No FCM token provided. Skipping notification.');
             return;
         }
@@ -39,25 +39,31 @@ export class PostNotifyService {
               body = `${fromUser} performed ${type} action`;
         }
         
-        const message = {
+        const messages = tokens.map(token => ({
             token,
-            notification: {
-              title,
-              body,
-            },
+            notification: { title, body },
             data: {
               type,
               postId,
               fromUser,
             },
-        };
+        }));
         
         try {
-            const response = await admin.messaging().send(message);
-            console.log(`Mention notification sent to token ${token}:`, response);
+            const results = await Promise.allSettled(messages.map(msg => admin.messaging().send(msg)));
+        
+            const failedTokens: string[] = [];
+            results.forEach((res, i) => {
+              if (res.status === 'rejected') {
+                console.error(`Failed to send to ${tokens[i]}:`, res.reason);
+                failedTokens.push(tokens[i]);
+              }
+            });
+        
+            console.log(`Mention Notification sent (Success: ${tokens.length - failedTokens.length}, Failed: ${failedTokens.length})`);
         } 
         catch (error) {
-            console.error(`Failed to send mention notification to ${token}:`, error);
+            console.error(`Error in sending mention notifications:`, error);
             throw new FirebaseSendError(error.message);
         }
     }
@@ -89,20 +95,23 @@ export class PostNotifyService {
 
     async mentionNotification(data: TagNotificationRequest): Promise<TagNotificationResponse> {
         try {
-            const users = await this.userSessionModel.find({userId: { $in: data.TagedUserIds }});
+            const users = await this.userSessionModel.find({userId: { $in: data.TagedUserIds }, status: 'active'});
             await Promise.all(
                 users.map(async (user) => {
                   if(!user.fcmToken) 
-                    return; // skip devices without a token
+                    return; 
+                
+                  const tokens = user.fcmToken.split(',').map(t => t.trim()).filter(Boolean);
+                  if (!tokens.length) return;
           
                   const message = `${data.userId} tagged you in a post: ${data.postId}`;
-                  await this.sendNotificationForMention(user.fcmToken,'mention',data.postId,data.userId); 
+                  await this.sendNotificationForMention(tokens,'mention',data.postId,data.userId); 
                   await this.createNotification({
                     recieverId: user.userId,
                     senderName: data.username,
                     type: 'mention',
                     content: message,
-                    senderId: data.userId,  
+                    senderId: data.userId, 
                     postId: data.postId,
                   });
                 }),

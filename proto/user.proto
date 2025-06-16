@@ -2,24 +2,25 @@ syntax = "proto3";
 
 package userNotification;
 
-service UserService {
-  rpc CreateUserNotification(CreateUserRequest) returns (UserResponse) {}
-  rpc Follow(FollowRequest) returns (UserResponse) {}
+service NotifyService {
+  rpc FollowRequest(followRequest) returns (SimpleUserResponse) {}
+  rpc PrivateFollowRequest(privateFollowRequest) returns (SimpleUserResponse) {}
 }
 
-message CreateUserRequest {
-    string userId = 1;
-    string userName = 2;
-}
-
-message FollowRequest {
+message followRequest {
   string userId = 1;
   string userName = 2;
   string targetId = 3;
   bool type = 4;
 }
 
-message UserResponse {
+message privateFollowRequest {
+  string userId = 1;
+  string userName = 2;
+  bool type = 3;
+}
+
+message SimpleUserResponse {
     string message = 1;
     string status = 2;
 }
