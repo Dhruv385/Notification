@@ -4,7 +4,7 @@ import { GrpcMethod } from "@nestjs/microservices";
 import { SendGlobalNotificationRequest, SendUserNotification } from "src/stubs/admin";
 
 
-@Controller('/admin')
+@Controller('/notify')
 export class AdminNotifyController {
     constructor(private readonly adminNotifyService: AdminNotifyService){}
 

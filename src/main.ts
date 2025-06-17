@@ -46,7 +46,7 @@ async function bootstrap() {
   });
 
   // Connect to Kafka
-  console.log('🔄 Connecting to Kafka...');
+  console.log('Connecting to Kafka...');
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.KAFKA,
     options: {
@@ -72,7 +72,7 @@ async function bootstrap() {
       },
     },
   });
-  console.log('✅ Kafka microservice connected');
+  console.log('Kafka microservice connected');
 
   await app.startAllMicroservices();
   await app.listen(process.env.PORT ?? 8000);

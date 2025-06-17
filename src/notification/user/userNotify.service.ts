@@ -29,20 +29,11 @@ export class UserNotifyService {
         
         let title = '';
         let body = '';
-        
-        switch (type) {
-            case false: // true- public
-              title = 'New Follower';
-              body = `${fromUser} started following you`;
-              break;
-            case true:
-                title = 'New Follow Request';
-                body = `${fromUser} is requesting to follow you`;
-                break;
-            default:
-              title = type;
-              body = `${fromUser} triggered ${type} action`;
-        }
+
+        const isPublic = type === false;
+
+        title = isPublic ? 'New Follower' : 'New Follow Request';
+        body = isPublic ? `${fromUser} started following you` : `${fromUser} is requesting to follow you`;
         
         const messages = tokens.map((token) => ({
             token,
@@ -99,20 +90,11 @@ export class UserNotifyService {
         
         let title = '';
         let body = '';
-        
-        switch (type) {
-            case true:
-              title = 'Accepted';
-              body = `${fromUser} accepted your request`;
-              break;
-            case false:
-                title = 'Rejected';
-                body = `${fromUser} reject your request`;
-                break;
-            default:
-              title = type;
-              body = `${fromUser} triggered ${type} action`;
-        }
+
+        const isAccepted = type === true;
+
+        title = isAccepted ? 'Accepted Request' : 'Rejected Request';
+        body = isAccepted ? `${fromUser} accept your request` : `${fromUser} reject your request`;
         
         const messages = tokens.map((token) => ({
             token,
@@ -148,25 +130,34 @@ export class UserNotifyService {
         }
         
         try{
-            const users = await this.userSessionModel.find({userId: data.userId, status: 'active'}); 
+            const users = await this.userSessionModel.find({userId: data.targetId, status: 'active'}); 
             if(!users){
                 throw new Error('User not found');
             }
-            const tokens = users.map(s => s.fcmToken).filter((token): token is string => typeof token === 'string');
+            const tokens = users.map(s => s.fcmToken).filter((token): token is string => typeof token === 'string' && token.trim() !== '');
+            console.log(tokens);
+            let sms = '';
             if (tokens.length>0) {
               await this.sendNotificationForFollow(tokens, data.type, data.userId);
+              if(data.type){
+                sms = `${data.userId} requesting to follow you.`
+              }
+              else{
+                sms = `${data.userId} started following you.`
+              }
+              console.log(sms);
               await this.createNotification({
-                recieverId: data.userId,
+                recieverId: data.targetId,
                 senderName: data.userName,
                 type: data.type,
-                content: `${data.userId} followed you`,
-                senderId: data.targetId,
+                content: sms,
+                senderId: data.userId,
                 postId: '',
               });
             }
           
             return {
-              message: `${data.userId} started following ${data.targetId}`,
+              message: sms,
               status: 'true',
             };
         }
@@ -190,8 +181,12 @@ export class UserNotifyService {
                 throw new Error('User not found');
             }
             const tokens = users.map(s => s.fcmToken).filter((token): token is string => typeof token === 'string');
+            let sms = `${data.userId} rejected your request.`;
             if (tokens.length>0) {
               await this.sendNotificationForFollowPrivate(tokens, data.type, data.userId);
+              if(data.type){
+                sms = `${data.userId} accepted your request`;
+              }
               await this.createNotification({
                 recieverId: data.userId,
                 senderName: data.userName,
@@ -203,7 +198,7 @@ export class UserNotifyService {
             }
           
             return {
-              message: `${data.userId} started following you`,
+              message: sms,
               status: 'true',
             };
         }

@@ -21,7 +21,7 @@ export class AdminNotifyService {
             }
         }
 
-    private async sendGlobalUserNotification(tokens: string[], title: string, body: string) {
+    private async sendGlobalUserNotification(tokens: string[], title: string, body: string):Promise<{ successCount: number }>  {
         const messages = tokens.map((token) => ({
             token,
             notification: {
@@ -29,7 +29,7 @@ export class AdminNotifyService {
                 body,
             },
         }));
-          
+        let successCount = 0;
         try {
             const results = await Promise.allSettled(messages.map(msg => admin.messaging().send(msg)));
           
@@ -39,9 +39,13 @@ export class AdminNotifyService {
                   console.error(`Failed to send to ${tokens[i]}:`, res.reason);
                   failedTokens.push(tokens[i]);
                 }
+                else{
+                    successCount++;
+                }
             });
           
             console.log(`Global Notification sent (Success: ${tokens.length - failedTokens.length}, Failed: ${failedTokens.length})`);
+            return {successCount};
         } 
         catch (err) {
             console.error('Error sending global notifications:', err);
@@ -118,7 +122,7 @@ export class AdminNotifyService {
         try {
             // Fetch all users with FCM tokens
             const users = await this.userSessionModel.find({ fcmToken: { $exists: true, $ne: null }, status: 'active' });
-            // console.log(users);
+            console.log(users);
         
             if (!users.length) {
                 return {
@@ -128,25 +132,46 @@ export class AdminNotifyService {
             }
             // Send notifications in parallel
             // console.log("hi");
+
+            let successCount: any = 0;
+            let failureCount = 0;
+
             await Promise.all(
                 users.map(async (user) => {
-                    const rawTokens = user.fcmToken;
-                    if (!rawTokens) return;
+                    try{
+                        const rawTokens = user.fcmToken;
+                        if (!rawTokens){
+                            failureCount++;
+                            return;
+                        } 
 
-                    const tokens = rawTokens.split(',').map(t => t.trim()).filter(Boolean);
-                    
-                    if (tokens.length === 0) return;
-    
-                    await this.sendGlobalUserNotification(tokens, data.title, data.body);
+                        const tokens = rawTokens.split(',').map(t => t.trim()).filter(t => t && !t.includes('example'));
+                        
+                        if (tokens.length === 0) {
+                            failureCount++;
+                            return;
+                        }
         
-                    await this.createNotification({
-                        recieverId: user.userId,
-                        senderName: '',
-                        type: data.title,
-                        content: data.body,
-                        senderId: 'Admin',
-                        postId: '',
-                    });
+                        const result = await this.sendGlobalUserNotification(tokens, data.title, data.body);
+            
+                        if (result.successCount > 0) {
+                            await this.createNotification({
+                                recieverId: user.userId,
+                                senderName: 'Admin',
+                                type: data.title || 'General',
+                                content: data.body || '',
+                                senderId: 'Admin',
+                                postId: '',
+                            });
+                            successCount++;
+                        } else {
+                            failureCount++;
+                        }
+                    }
+                    catch(err){
+                        console.error('Error processing user notification:', err);
+                        failureCount++;
+                    }
                 })
             );
         
@@ -187,7 +212,7 @@ export class AdminNotifyService {
             await this.sendFCMNotificationForAdmin(user.userId, data.title, data.body);
             await this.createNotification({
                 recieverId: user.userId,
-                senderName: '',
+                senderName: 'Admin',
                 type: data.title,
                 content: data.body,
                 senderId: 'Admin',
