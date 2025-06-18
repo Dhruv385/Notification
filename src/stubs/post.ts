@@ -16,6 +16,7 @@ export interface TagNotificationRequest {
   username: string;
   postId: string;
   TagedUserIds: string[];
+  postUrl: string;
 }
 
 export interface TagNotificationResponse {

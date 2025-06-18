@@ -10,7 +10,8 @@ message TagNotificationRequest {
   string userId = 1;
   string username = 2;
   string postId = 3;
-  repeated string TagedUserIds = 4; 
+  repeated string TagedUserIds = 4;
+  string postUrl = 5;
 }
 
 message TagNotificationResponse {

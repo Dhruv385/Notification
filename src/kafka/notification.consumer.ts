@@ -15,7 +15,6 @@ export class NotificationConsumer implements OnModuleInit, OnModuleDestroy {
 
     this.consumer = this.kafka.consumer({
       groupId: 'notification-consumer',
-      
     });
   }
 
@@ -24,7 +23,10 @@ export class NotificationConsumer implements OnModuleInit, OnModuleDestroy {
 
     await this.consumer.connect();
     await this.consumer.subscribe({ topic: 'post.react', fromBeginning: true });
-    await this.consumer.subscribe({ topic: 'post.comment', fromBeginning: true });
+    await this.consumer.subscribe({
+      topic: 'post.comment',
+      fromBeginning: true,
+    });
     await this.consumer.subscribe({ topic: 'post.reply', fromBeginning: true });
 
     await this.consumer.run({
@@ -37,13 +39,13 @@ export class NotificationConsumer implements OnModuleInit, OnModuleDestroy {
         try {
           switch (topic) {
             case 'post.react': {
-              const { postId, userId, username,  postOwnerId } = data;
+              const { postId, userId, username, postOwnerId } = data;
               await this.notificationService.sendNotification(
                 postOwnerId,
                 'like',
                 postId,
                 userId,
-                username
+                username,
               );
               break;
             }
@@ -55,13 +57,19 @@ export class NotificationConsumer implements OnModuleInit, OnModuleDestroy {
                 'comment',
                 postId,
                 userId,
-                username
+                username,
               );
               break;
             }
 
             case 'post.reply': {
-              const { postId, userId, username, parentCommentId, replyToUserId } = data;
+              const {
+                postId,
+                userId,
+                username,
+                parentCommentId,
+                replyToUserId,
+              } = data;
               await this.notificationService.sendNotification(
                 replyToUserId,
                 'reply',

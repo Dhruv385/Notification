@@ -13,22 +13,22 @@ dotenv.config();
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, 
+      isGlobal: true,
     }),
 
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('DB_URI'),
+        uri: await configService.get<string>('DB_URI'),
       }),
     }),
     NotificationModule,
     AdminNotifyModule,
     UserNotifyModule,
     PostNotifyModule,
-    GrpcAuthModule
+    GrpcAuthModule,
   ],
-  providers: [NotificationConsumer]
+  providers: [NotificationConsumer],
 })
 export class AppModule {}

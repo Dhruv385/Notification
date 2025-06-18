@@ -3,13 +3,12 @@ import { AppModule } from './app.module';
 import * as dotenv from 'dotenv';
 import { join } from 'path';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 dotenv.config();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
-    origin: '*', 
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
@@ -61,8 +60,8 @@ async function bootstrap() {
         maxWaitTimeInMs: 5000,
         retry: {
           initialRetryTime: 100,
-          retries: 8
-        }
+          retries: 8,
+        },
       },
       run: {
         autoCommit: true,

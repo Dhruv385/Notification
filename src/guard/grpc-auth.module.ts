@@ -19,6 +19,6 @@ import { GrpcAuthGuard } from './grpc-auth.guard';
     ]),
   ],
   providers: [GrpcAuthGuard],
-  exports: [GrpcAuthGuard,ClientsModule],
+  exports: [GrpcAuthGuard, ClientsModule],
 })
 export class GrpcAuthModule {}
