@@ -39,7 +39,8 @@ export class PostNotifyService {
     type: string,
     postId: string,
     fromUser: string,
-    posturl: string
+    posturl: string,
+    username: string,
   ): Promise<void> {
     if (!tokens.length) {
       console.warn('No FCM token provided. Skipping notification.');
@@ -52,11 +53,11 @@ export class PostNotifyService {
     switch (type) {
       case 'mention':
         title = 'You were mentioned!';
-        body = `${fromUser} tagged you in a post (${posturl})`;
+        body = `${username} tagged you in a post`;
         break;
       default:
         title = type;
-        body = `${fromUser} performed ${type} action`;
+        body = `${username} performed ${type} action`;
     }
 
     const messages = tokens.map((token) => ({
@@ -91,7 +92,7 @@ export class PostNotifyService {
     }
   }
 
-  async createNotification(data: {
+  async createNotificationForMention(data: {
     recieverId: string;
     senderName: string;
     type: string;
@@ -113,7 +114,7 @@ export class PostNotifyService {
         content: data.content,
         senderId: data.senderId,
         postId: data.postId,
-        postUrl: data.postUrl,
+        posturl: data.postUrl,
         createdAt: new Date(),
       });
       await notification.save();
@@ -138,18 +139,20 @@ export class PostNotifyService {
           console.log(tokens);
           if (!tokens.length) return;
           
-          const message = `${data.userId} tagged you in a post: ${data.postUrl}`;
+          const message = `${data.username} tagged you in a post`;
           const postKey=data.postUrl;
-          console.log(postKey);
-          console.log(message);
+          // console.log(postKey);
+          // console.log(message);
           await this.sendNotificationForMention(
             tokens,
             'mention',
             data.postId,
             data.userId,
-            postKey
+            postKey,
+            data.username
           );
-          await this.createNotification({
+
+          await this.createNotificationForMention({
             recieverId: user.userId,
             senderName: data.username,
             type: 'mention',

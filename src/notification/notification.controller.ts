@@ -31,46 +31,32 @@ export class NotificationController {
       }
   }
 
+  @Post('/send/reply')
+  async sendNotificationReply(@Body() body: { postOwnerId: string, action: string, postId: string, userId: string, username: string, parentCommentId: string, mediaUrl: string }) {
+      const { postOwnerId, action, postId, userId, username, parentCommentId, mediaUrl} = body;
+      try {
+          await this.notificationService.sendNotificationForReply(postOwnerId, action, postId, userId, username, parentCommentId, mediaUrl);
+          return { msg: 'Notification sent successfully' };
+      }
+      catch (err) {
+          console.error(err);
+          return { msg: err };
+      }
+  }
+
   @UseGuards(GrpcAuthGuard)
   @Get('/')
   async send(@Req() req) {
     const userId = req.user.userId;
 
-    const notifications = await this.notificationModel.find({ recieverId: userId, senderId: { $ne: null } }).sort({ createdAt: -1 });
-    const senderIds = notifications.filter((r) => typeof r.senderId === 'string' && r.senderId).map((r) => r.senderId!);
-    const users = await this.grpcService.getMultipleUserNamesByIds(senderIds);
-
-    const senderMap = new Map(
-      users.map((u) => [
-        u.userId,
-        {
-          username: u.username,
-          mediaUrl: u.mediaUrl,
-        },
-      ]),
-    );
-
-    const enrichedNotifications = notifications.map((r) => {
-      const senderInfo = r.senderId ? senderMap.get(r.senderId.toString()) : null;
-
-      return {
-        _id: r._id,
-        recieverId: r.recieverId,
-        senderId: r.senderId ?? null,
-        senderName: r.senderName ?? senderInfo?.username ?? null,
-        type: r.type,
-        content: r.content,
-        postId: r.postId ?? null,
-        posturl: r.posturl ?? null,
-        senderMediaUrl: senderInfo?.mediaUrl ?? null,
-      };
-    });
+    const notifications = await this.notificationModel
+      .find({ recieverId: userId, senderId: { $ne: null } })
+      .sort({ createdAt: -1 });
 
     return {
       message: 'Notifications fetched successfully',
       success: true,
-      data: enrichedNotifications,
+      data: notifications,
     };
   }
-
 }
