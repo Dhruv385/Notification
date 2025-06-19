@@ -39,25 +39,27 @@ export class NotificationConsumer implements OnModuleInit, OnModuleDestroy {
         try {
           switch (topic) {
             case 'post.react': {
-              const { postId, userId, username, postOwnerId } = data;
+              const { postId, userId, username, mediaUrl, postOwnerId } = data;
               await this.notificationService.sendNotification(
                 postOwnerId,
                 'like',
                 postId,
                 userId,
                 username,
+                mediaUrl
               );
               break;
             }
 
             case 'post.comment': {
-              const { postId, userId, username, postOwnerId } = data;
+              const { postId, userId, username, mediaUrl, postOwnerId } = data;
               await this.notificationService.sendNotification(
                 postOwnerId,
                 'comment',
                 postId,
                 userId,
                 username,
+                mediaUrl
               );
               break;
             }
@@ -67,16 +69,18 @@ export class NotificationConsumer implements OnModuleInit, OnModuleDestroy {
                 postId,
                 userId,
                 username,
+                mediaUrl,
                 parentCommentId,
                 replyToUserId,
               } = data;
-              await this.notificationService.sendNotification(
+              await this.notificationService.sendNotificationForReply(
                 replyToUserId,
                 'reply',
                 postId,
                 userId,
                 username,
                 parentCommentId,
+                mediaUrl
               );
               break;
             }

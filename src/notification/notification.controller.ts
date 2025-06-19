@@ -13,25 +13,31 @@ export class NotificationController {
   constructor(
     @InjectModel(Notification.name)
     private notificationModel: Model<NotificationDocument>,
+    private notificationService: NotificationService
   ) {}
 
-  // @Post('/send')
-  // async sendNotification(@Body() body: { token: string; action: string; postId?: string; fromUser?: string; }) {
-  //     const { token, action, fromUser, postId } = body;
-  //     try {
-  //         await this.notificationService.sendNotification(token, action, postId, fromUser);
-  //         return { msg: 'Notification sent successfully' };
-  //     }
-  //     catch (err) {
-  //         console.error(err);
-  //         return { msg: err };
-  //     }
-  // }
+  @Post('/send')
+  async sendNotification(@Body() body: { userId: string; action: string; postId: string; fromUser: string; username: string; mediaUrl: string }) {
+      const { userId, action, fromUser, postId, username, mediaUrl} = body;
+      try {
+          await this.notificationService.sendNotification(userId, action, postId, fromUser,username, mediaUrl);
+          return { msg: 'Notification sent successfully' };
+      }
+      catch (err) {
+          console.error(err);
+          return { msg: err };
+      }
+  }
 
   @UseGuards(GrpcAuthGuard)
   @Get('/')
   async send(@Req() req) {
     const userId = req.user.userId;
-    return await this.notificationModel.find({ recieverId: userId });
+    const notifications = await this.notificationModel.find({ recieverId: userId }).sort({ createdAt: -1 });
+    return {
+      message: 'Notifications fetched successfully',
+      success: true,
+      data: notifications,
+    };
   }
 }

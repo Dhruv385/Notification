@@ -104,6 +104,7 @@ export class PostNotifyService {
       if (!data.type || !data.content || !data.senderId || !data.postId) {
         throw new InvalidNotificationInputError('Missing required fields');
       }
+      console.log('data Comming :',data);
       // Save notification to database
       const notification = new this.notificationModel({
         recieverId: data.recieverId,
@@ -134,15 +135,19 @@ export class PostNotifyService {
           if (!user.fcmToken) return;
 
           const tokens = user.fcmToken.split(',').map((t) => t.trim()).filter(Boolean);
+          console.log(tokens);
           if (!tokens.length) return;
           
           const message = `${data.userId} tagged you in a post: ${data.postUrl}`;
+          const postKey=data.postUrl;
+          console.log(postKey);
+          console.log(message);
           await this.sendNotificationForMention(
             tokens,
             'mention',
             data.postId,
             data.userId,
-            data.postUrl
+            postKey
           );
           await this.createNotification({
             recieverId: user.userId,
@@ -151,7 +156,7 @@ export class PostNotifyService {
             content: message,
             senderId: data.userId,
             postId: data.postId,
-            postUrl: data.postUrl
+            postUrl: postKey
           });
         }),
       );

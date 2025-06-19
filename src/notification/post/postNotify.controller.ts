@@ -7,7 +7,7 @@ import { PostNotifyService } from './postNotify.service';
 export class PostNotifyController {
   constructor(private readonly postNotifyService: PostNotifyService) {}
 
-  @GrpcMethod('notificationService', 'TagNotification')
+  @GrpcMethod('NotificationService', 'TagNotification')
   @Post('post/mention')
   mentionNotification(@Body() body: TagNotificationRequest) {
     return this.postNotifyService.mentionNotification(body);

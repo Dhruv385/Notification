@@ -8,7 +8,7 @@ export class Notification {
   @Prop({ required: true })
   recieverId: string;
 
-  @Prop()
+  @Prop({required: false})
   senderName?: string;
 
   @Prop({ required: true })
@@ -17,13 +17,13 @@ export class Notification {
   @Prop({ required: true })
   content: string;
 
-  @Prop()
+  @Prop({required: false})
   senderId?: string;
 
-  @Prop()
+  @Prop({required: false})
   postId?: string;
 
-  @Prop()
+  @Prop({required: false})
   posturl?: string;
 }
 
