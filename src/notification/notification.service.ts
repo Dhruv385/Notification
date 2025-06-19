@@ -166,6 +166,7 @@
 // }
 
 
+
 import { Injectable } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { Model } from 'mongoose';
@@ -227,10 +228,10 @@ export class NotificationService {
 
       const token = user.fcmToken;
       const messageText = this.generateNotificationMessage(action, postId, username);
-
+      console.log(username)
       await this.createNotification({
         recieverId: postOwnerId,
-        senderName: username ?? 'Someone',
+        senderName: username,
         type: action,
         content: messageText,
         senderId: userId,
@@ -298,15 +299,16 @@ export class NotificationService {
     postUrl: string;
   }): Promise<void> {
     try {
-      const notification = new this.notificationModel({
+      const notification = await this.notificationModel.create({
         ...data,
         createdAt: new Date(),
       });
-      await notification.save();
+      // await notification.save();
       console.log('Notification saved to DB:', notification);
     } catch (error) {
       console.error('Error saving notification:', error);
       throw new NotificationSaveError(error.message);
     }
   }
+
 }

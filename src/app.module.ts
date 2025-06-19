@@ -8,6 +8,9 @@ import { AdminNotifyModule } from './notification/admin/adminNotify.module';
 import { UserNotifyModule } from './notification/user/userNotify.module';
 import { PostNotifyModule } from './notification/post/postNotify.module';
 import { GrpcAuthModule } from './guard/grpc-auth.module';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { join } from 'path';
+import { GrpcModule } from './grpc/grpc.module';
 dotenv.config();
 
 @Module({

@@ -24,3 +24,4 @@ message SimpleUserResponse {
     string message = 1;
     string status = 2;
 }
+

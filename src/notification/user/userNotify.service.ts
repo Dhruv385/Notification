@@ -80,7 +80,7 @@ export class UserNotifyService {
   async createNotification(data: {
     recieverId: string;
     senderName: string;
-    type: boolean;
+    type: string;
     content: string;
     senderId: string;
     postId: string;
@@ -178,6 +178,7 @@ export class UserNotifyService {
       let sms = '';
       if (tokens.length > 0) {
         await this.sendNotificationForFollow(tokens, data.type, data.userId);
+        console.log(data.userName);
         if (data.type) {
           sms = `${data.userId} requesting to follow you.`;
         } else {
@@ -187,7 +188,7 @@ export class UserNotifyService {
         await this.createNotification({
           recieverId: data.targetId,
           senderName: data.userName,
-          type: data.type,
+          type: data.type ? 'private' : 'public',
           content: sms,
           senderId: data.userId,
           postId: '',
@@ -236,7 +237,7 @@ export class UserNotifyService {
         await this.createNotification({
           recieverId: data.userId,
           senderName: data.userName,
-          type: data.type,
+          type: data.type ? 'accepted' : 'rejected',
           content: ``,
           senderId: '',
           postId: '',
