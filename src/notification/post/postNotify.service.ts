@@ -128,6 +128,7 @@ export class PostNotifyService {
 
   async mentionNotification(data: TagNotificationRequest): Promise<TagNotificationResponse> {
     try {
+      console.log('data Comming :',data);
       const users = await this.userSessionModel.find({
         userId: { $in: data.TagedUserIds },
         status: 'active',

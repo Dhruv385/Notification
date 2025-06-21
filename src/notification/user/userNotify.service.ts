@@ -38,7 +38,7 @@ export class UserNotifyService {
   private async sendNotificationForFollow(
     tokens: string[],
     type: boolean,
-    fromUser: string,
+    userName: string,
   ): Promise<void> {
     if (!tokens) {
       console.warn('No FCM token provided. Skipping notification.');
@@ -52,8 +52,8 @@ export class UserNotifyService {
 
     title = isPublic ? 'New Follower' : 'New Follow Request';
     body = isPublic
-      ? `${fromUser} started following you`
-      : `${fromUser} is requesting to follow you`;
+      ? `${userName} started following you`
+      : `${userName} is requesting to follow you`;
 
     const messages = tokens.map((token) => ({
       token,
@@ -177,7 +177,7 @@ export class UserNotifyService {
       console.log(tokens);
       let sms = '';
       if (tokens.length > 0) {
-        await this.sendNotificationForFollow(tokens, data.type, data.userId);
+        await this.sendNotificationForFollow(tokens, data.type, data.userName);
         console.log(data.userName);
         if (data.type) {
           sms = `${data.userId} requesting to follow you.`;
