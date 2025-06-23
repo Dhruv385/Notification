@@ -17,6 +17,7 @@ import {
   InvalidNotificationInputError,
   NotificationSaveError,
 } from 'src/errors/notification.error';
+import { DATABASE_CONSTANTS, ERROR_MESSAGES, FIREBASE_CONFIG, NOTIFICATION_MESSAGES, NOTIFICATION_TYPES, SUCCESS_MESSAGES } from 'src/constants';
 
 @Injectable()
 export class UserNotifyService {
@@ -26,7 +27,7 @@ export class UserNotifyService {
     @InjectModel(UserSession.name)
     private readonly userSessionModel: Model<UserSession>,
   ) {
-    const serviceAccount = require('/home/user/Assignment/social_media/Notification/firebase.json');
+    const serviceAccount = require(FIREBASE_CONFIG.SERVICE_ACCOUNT_PATH);
 
     if (!admin.apps.length) {
       admin.initializeApp({
@@ -37,43 +38,42 @@ export class UserNotifyService {
 
   private async sendNotificationForFollow(
     tokens: string[],
-    type: boolean,
+    isPrivate: boolean,
     userName: string,
   ): Promise<void> {
-    if (!tokens) {
-      console.warn('No FCM token provided. Skipping notification.');
+    if (!tokens || tokens.length === 0) {
+      console.warn(ERROR_MESSAGES.MISSING_FCM_TOKEN);
       return;
     }
 
-    let title = '';
-    let body = '';
-
-    const isPublic = type === false;
-
-    title = isPublic ? 'New Follower' : 'New Follow Request';
-    body = isPublic
-      ? `${userName} started following you`
-      : `${userName} is requesting to follow you`;
+    const title = isPrivate ? 'New Follow Request' : 'New Follower';
+    const body = isPrivate
+      ? `${userName} is requesting to follow you`
+      : NOTIFICATION_MESSAGES.FOLLOW(userName);
 
     const messages = tokens.map((token) => ({
       token,
       notification: { title, body },
     }));
 
-    const results = await Promise.allSettled(
-      messages.map((msg) => admin.messaging().send(msg)),
-    );
+    try {
+      const results = await Promise.allSettled(
+        messages.map((msg) => admin.messaging().send(msg)),
+      );
 
-    const failedTokens: string[] = [];
-    results.forEach((result, i) => {
-      if (result.status === 'rejected') {
-        console.error(`Failed to send to ${tokens[i]}:`, result.reason);
-        failedTokens.push(tokens[i]);
+      const failedTokens: string[] = [];
+      results.forEach((result, i) => {
+        if (result.status === 'rejected') {
+          console.error(`Failed to send to ${tokens[i]}:`, result.reason);
+          failedTokens.push(tokens[i]);
+        }
+      });
+
+      if (failedTokens.length) {
+        console.warn('Some tokens failed:', failedTokens);
       }
-    });
-
-    if (failedTokens.length) {
-      console.warn('Some tokens failed:', failedTokens);
+    } catch (err) {
+      throw new FirebaseSendError(ERROR_MESSAGES.FIREBASE_SEND_ERROR);
     }
   }
 
@@ -87,75 +87,65 @@ export class UserNotifyService {
   }): Promise<void> {
     try {
       if (!data.type || !data.content || !data.senderId) {
-        throw new InvalidNotificationInputError('Missing required fields');
+        throw new InvalidNotificationInputError(ERROR_MESSAGES.MISSING_REQUIRED_FIELDS);
       }
-      // Save notification to database
       const notification = new this.notificationModel({
-        recieverId: data.recieverId,
-        senderName: data.senderName,
-        type: data.type,
-        content: data.content,
-        senderId: data.senderId,
-        postId: data.postId,
+        ...data,
         createdAt: new Date(),
       });
       await notification.save();
-
-      console.log('Notification saved:', notification);
+      console.log(SUCCESS_MESSAGES.NOTIFICATION_SAVED, notification);
     } catch (error) {
-      console.error('Error creating notification:', error);
+      console.error(ERROR_MESSAGES.NOTIFICATION_SAVE_ERROR, error);
       throw new NotificationSaveError(error.message);
     }
   }
 
   private async sendNotificationForFollowPrivate(
     tokens: string[],
-    type: boolean,
+    isAccepted: boolean,
     fromUser: string,
   ): Promise<void> {
-    if (!tokens) {
-      console.warn('No FCM token provided. Skipping notification.');
+    if (!tokens || tokens.length === 0) {
+      console.warn(ERROR_MESSAGES.MISSING_FCM_TOKEN);
       return;
     }
 
-    let title = '';
-    let body = '';
-
-    const isAccepted = type === true;
-
-    title = isAccepted ? 'Accepted Request' : 'Rejected Request';
-    body = isAccepted
-      ? `${fromUser} accept your request`
-      : `${fromUser} reject your request`;
+    const title = isAccepted ? 'Accepted Request' : 'Rejected Request';
+    const body = isAccepted
+      ? `${fromUser} accepted your request`
+      : `${fromUser} rejected your request`;
 
     const messages = tokens.map((token) => ({
       token,
       notification: { title, body },
     }));
 
-    const results = await Promise.allSettled(
-      messages.map((msg) => admin.messaging().send(msg)),
-    );
+    try {
+      const results = await Promise.allSettled(
+        messages.map((msg) => admin.messaging().send(msg)),
+      );
 
-    const failedTokens: string[] = [];
-    results.forEach((result, i) => {
-      if (result.status === 'rejected') {
-        console.error(`Failed to send to ${tokens[i]}:`, result.reason);
-        failedTokens.push(tokens[i]);
+      const failedTokens: string[] = [];
+      results.forEach((result, i) => {
+        if (result.status === 'rejected') {
+          console.error(`Failed to send to ${tokens[i]}:`, result.reason);
+          failedTokens.push(tokens[i]);
+        }
+      });
+
+      if (failedTokens.length) {
+        console.warn('Some tokens failed:', failedTokens);
       }
-    });
-
-    if (failedTokens.length) {
-      console.warn('Some tokens failed:', failedTokens);
+    } catch (err) {
+      throw new FirebaseSendError(ERROR_MESSAGES.FIREBASE_SEND_ERROR);
     }
   }
 
-  // --GRPC METHOD
   async follow(data: followRequest): Promise<SimpleUserResponse> {
-    // console.log(data);
     if (!data.userId || !data.targetId) {
       return {
-        message: `Invalid follow request: missing userId or targetId`,
+        message: ERROR_MESSAGES.INVALID_INPUT_ERROR,
         status: 'false',
       };
     }
@@ -163,32 +153,31 @@ export class UserNotifyService {
     try {
       const users = await this.userSessionModel.find({
         userId: data.targetId,
-        status: 'active',
+        status: DATABASE_CONSTANTS.USER_SESSION_STATUS.ACTIVE,
       });
-      if (!users) {
-        throw new Error('User not found');
+
+      if (!users || users.length === 0) {
+        throw new Error(ERROR_MESSAGES.USER_NOT_FOUND);
       }
+
       const tokens = users
         .map((s) => s.fcmToken)
-        .filter(
-          (token): token is string =>
-            typeof token === 'string' && token.trim() !== '',
-        );
-      console.log(tokens);
+        .filter((token): token is string => !!token);
+
       let sms = '';
       if (tokens.length > 0) {
         await this.sendNotificationForFollow(tokens, data.type, data.userName);
-        console.log(data.userName);
+        
         if (data.type) {
-          sms = `${data.userId} requesting to follow you.`;
+          sms = `${data.userName} is requesting to follow you.`;
         } else {
-          sms = `${data.userId} started following you.`;
+          sms = NOTIFICATION_MESSAGES.FOLLOW(data.userName);
         }
-        console.log(sms);
+
         await this.createNotification({
           recieverId: data.targetId,
           senderName: data.userName,
-          type: data.type ? 'private' : 'public',
+          type: data.type ? NOTIFICATION_TYPES.FOLLOW : 'public_follow',
           content: sms,
           senderId: data.userId,
           postId: '',
@@ -208,7 +197,7 @@ export class UserNotifyService {
   async followPrivate(data: privateFollowRequest): Promise<SimpleUserResponse> {
     if (!data.userId) {
       return {
-        message: `Invalid follow request: missing userId or targetId`,
+        message: ERROR_MESSAGES.INVALID_INPUT_ERROR,
         status: 'false',
       };
     }
@@ -216,29 +205,33 @@ export class UserNotifyService {
     try {
       const users = await this.userSessionModel.find({
         userId: data.userId,
-        status: 'active',
+        status: DATABASE_CONSTANTS.USER_SESSION_STATUS.ACTIVE,
       });
-      if (!users) {
-        throw new Error('User not found');
+
+      if (!users || users.length === 0) {
+        throw new Error(ERROR_MESSAGES.USER_NOT_FOUND);
       }
+      
       const tokens = users
         .map((s) => s.fcmToken)
-        .filter((token): token is string => typeof token === 'string');
-      let sms = `${data.userId} rejected your request.`;
+        .filter((token): token is string => !!token);
+
+      let sms = `${data.userName} rejected your request.`;
       if (tokens.length > 0) {
         await this.sendNotificationForFollowPrivate(
           tokens,
           data.type,
-          data.userId,
+          data.userName,
         );
         if (data.type) {
-          sms = `${data.userId} accepted your request`;
+          sms = `${data.userName} accepted your request`;
         }
+
         await this.createNotification({
           recieverId: data.userId,
           senderName: data.userName,
-          type: data.type ? 'accepted' : 'rejected',
-          content: ``,
+          type: data.type ? 'accepted_request' : 'rejected_request',
+          content: sms,
           senderId: '',
           postId: '',
         });
@@ -249,7 +242,7 @@ export class UserNotifyService {
         status: 'true',
       };
     } catch (err) {
-      console.error('Error while sending post notifications:', err);
+      console.error('Error while handling private follow:', err);
       return { message: 'Something went wrong', status: 'false' };
     }
   }

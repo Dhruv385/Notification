@@ -17,6 +17,7 @@ import {
   InvalidNotificationInputError,
   NotificationSaveError,
 } from 'src/errors/notification.error';
+import { DATABASE_CONSTANTS, ERROR_MESSAGES, FIREBASE_CONFIG, LOG_CONSTANTS, NOTIFICATION_CATEGORIES, SUCCESS_MESSAGES } from 'src/constants';
 
 @Injectable()
 export class AdminNotifyService {
@@ -26,7 +27,7 @@ export class AdminNotifyService {
     @InjectModel(UserSession.name)
     private readonly userSessionModel: Model<UserSession>,
   ) {
-    const serviceAccount = require('/home/user/Assignment/social_media/Notification/firebase.json');
+    const serviceAccount = require(FIREBASE_CONFIG.SERVICE_ACCOUNT_PATH);
 
     if (!admin.apps.length) {
       admin.initializeApp({
@@ -68,7 +69,7 @@ export class AdminNotifyService {
       );
       return { successCount };
     } catch (err) {
-      console.error('Error sending global notifications:', err);
+      console.error(LOG_CONSTANTS.LOG_PREFIXES.FIREBASE, 'Error sending global notifications:', err);
       throw new FirebaseSendError(err.message);
     }
   }
@@ -83,9 +84,8 @@ export class AdminNotifyService {
   }): Promise<void> {
     try {
       if (!data.type || !data.content || !data.senderName || !data.recieverId) {
-        throw new InvalidNotificationInputError('Missing required fields');
+        throw new InvalidNotificationInputError(ERROR_MESSAGES.MISSING_REQUIRED_FIELDS);
       }
-      // Save notification to database
       const notification = new this.notificationModel({
         recieverId: data.recieverId,
         senderName: data.senderName,
@@ -97,9 +97,9 @@ export class AdminNotifyService {
       });
       await notification.save();
 
-      console.log('Notification saved:', notification);
+      console.log(SUCCESS_MESSAGES.NOTIFICATION_SAVED, notification);
     } catch (err) {
-      console.error('Error creating notification:', err);
+      console.error(LOG_CONSTANTS.LOG_PREFIXES.DATABASE, ERROR_MESSAGES.NOTIFICATION_SAVE_ERROR, err);
       throw new NotificationSaveError(err.message);
     }
   }
@@ -132,7 +132,7 @@ export class AdminNotifyService {
         `User Notification sent (Success: ${tokens.length - failedTokens.length}, Failed: ${failedTokens.length})`,
       );
     } catch (err) {
-      console.error('Error sending user notifications:', err);
+      console.error(LOG_CONSTANTS.LOG_PREFIXES.FIREBASE, 'Error sending user notifications:', err);
       throw new FirebaseSendError(err.message);
     }
   }
@@ -145,13 +145,13 @@ export class AdminNotifyService {
       // Fetch all users with FCM tokens
       const users = await this.userSessionModel.find({
         fcmToken: { $exists: true, $ne: null },
-        status: 'active',
+        status: DATABASE_CONSTANTS.USER_SESSION_STATUS.ACTIVE,
       });
       console.log(users);
 
       if (!users.length) {
         return {
-          message: 'No users found with valid FCM tokens',
+          message: ERROR_MESSAGES.USER_NOT_FOUND,
           success: false,
         };
       }
@@ -190,7 +190,7 @@ export class AdminNotifyService {
               await this.createNotification({
                 recieverId: user.userId,
                 senderName: 'Admin',
-                type: data.title || 'General',
+                type: data.title || NOTIFICATION_CATEGORIES.SYSTEM,
                 content: data.body || '',
                 senderId: 'Admin',
                 postId: '',
@@ -207,13 +207,13 @@ export class AdminNotifyService {
       );
 
       return {
-        message: 'Global notification sent successfully to all users',
+        message: SUCCESS_MESSAGES.NOTIFICATION_SENT,
         success: true,
       };
     } catch (err) {
       console.error('Global notification error:', err);
       return {
-        message: 'Failed to send global notification',
+        message: ERROR_MESSAGES.FIREBASE_SEND_ERROR,
         success: false,
       };
     }
@@ -226,10 +226,10 @@ export class AdminNotifyService {
     try {
       const users = await this.userSessionModel.find({
         userId: data.userId,
-        status: 'active',
+        status: DATABASE_CONSTANTS.USER_SESSION_STATUS.ACTIVE,
       });
-      if (!users) {
-        throw new Error('User not found');
+      if (!users || users.length === 0) {
+        throw new Error(ERROR_MESSAGES.USER_NOT_FOUND);
       }
       // console.log(user);
       await Promise.all(
@@ -241,7 +241,7 @@ export class AdminNotifyService {
             console.log(tokens);
             if (tokens.length == 0) {
               return {
-                message: 'No FCM tokens found for user',
+                message: ERROR_MESSAGES.MISSING_FCM_TOKEN,
                 success: false,
               };
             }
@@ -251,31 +251,31 @@ export class AdminNotifyService {
               data.title,
               data.body,
             );
+            
             await this.createNotification({
-              recieverId: user.userId,
+              recieverId: data.userId,
               senderName: 'Admin',
               type: data.title,
               content: data.body,
               senderId: 'Admin',
               postId: '',
             });
-            return {
-              message: 'User notification sent successfully users',
-              success: true,
-            };
-          } catch (err) {
-            console.error('User notification error:', err);
+          } catch (error) {
+            console.error(
+              `Failed to send notification to user ${user.userId}`,
+              error,
+            );
           }
         }),
       );
       return {
-        message: 'User notification sent successfully users',
+        message: SUCCESS_MESSAGES.NOTIFICATION_SENT,
         success: true,
       };
     } catch (err) {
-      console.error('User notification error:', err);
+      console.error('Error sending user-specific notification:', err);
       return {
-        message: 'Failed to send user notification',
+        message: ERROR_MESSAGES.FIREBASE_SEND_ERROR,
         success: false,
       };
     }

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { NOTIFICATION_TYPES } from '../../constants';
 
 export class SendReplyNotificationDto {
   @ApiProperty({
@@ -11,9 +12,9 @@ export class SendReplyNotificationDto {
   postOwnerId: string;
 
   @ApiProperty({
-    description: 'Action type of the notification',
+    description: 'Action type of the notification (should be "reply")',
     example: 'reply',
-    enum: ['reply']
+    enum: [NOTIFICATION_TYPES.REPLY]
   })
   @IsString()
   @IsNotEmpty()

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { NOTIFICATION_TYPES } from '../../constants';
 
 export class SendNotificationDto {
   @ApiProperty({
@@ -13,7 +14,7 @@ export class SendNotificationDto {
   @ApiProperty({
     description: 'Action type of the notification',
     example: 'like',
-    enum: ['like', 'comment', 'follow', 'reply']
+    enum: Object.values(NOTIFICATION_TYPES)
   })
   @IsString()
   @IsNotEmpty()

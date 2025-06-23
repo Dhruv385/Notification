@@ -16,6 +16,7 @@ import {
   InvalidNotificationInputError,
   NotificationSaveError,
 } from 'src/errors/notification.error';
+import { DATABASE_CONSTANTS, ERROR_MESSAGES, FIREBASE_CONFIG, LOG_CONSTANTS, NOTIFICATION_MESSAGES, NOTIFICATION_TYPES, SUCCESS_MESSAGES } from 'src/constants';
 
 @Injectable()
 export class PostNotifyService {
@@ -25,7 +26,7 @@ export class PostNotifyService {
     @InjectModel(UserSession.name)
     private readonly userSessionModel: Model<UserSession>,
   ) {
-    const serviceAccount = require('/home/user/Assignment/social_media/Notification/firebase.json');
+    const serviceAccount = require(FIREBASE_CONFIG.SERVICE_ACCOUNT_PATH);
 
     if (!admin.apps.length) {
       admin.initializeApp({
@@ -43,7 +44,7 @@ export class PostNotifyService {
     username: string,
   ): Promise<void> {
     if (!tokens.length) {
-      console.warn('No FCM token provided. Skipping notification.');
+      console.warn(ERROR_MESSAGES.MISSING_FCM_TOKEN);
       return;
     }
 
@@ -51,9 +52,9 @@ export class PostNotifyService {
     let body = '';
 
     switch (type) {
-      case 'mention':
+      case NOTIFICATION_TYPES.MENTION:
         title = 'You were mentioned!';
-        body = `${username} tagged you in a post`;
+        body = NOTIFICATION_MESSAGES.MENTION(username);
         break;
       default:
         title = type;
@@ -87,7 +88,7 @@ export class PostNotifyService {
         `Mention Notification sent (Success: ${tokens.length - failedTokens.length}, Failed: ${failedTokens.length})`,
       );
     } catch (error) {
-      console.error(`Error in sending mention notifications:`, error);
+      console.error(LOG_CONSTANTS.LOG_PREFIXES.FIREBASE, `Error in sending mention notifications:`, error);
       throw new FirebaseSendError(error.message);
     }
   }
@@ -103,50 +104,39 @@ export class PostNotifyService {
   }): Promise<void> {
     try {
       if (!data.type || !data.content || !data.senderId || !data.postId) {
-        throw new InvalidNotificationInputError('Missing required fields');
+        throw new InvalidNotificationInputError(ERROR_MESSAGES.MISSING_REQUIRED_FIELDS);
       }
-      console.log('data Comming :',data);
-      // Save notification to database
       const notification = new this.notificationModel({
-        recieverId: data.recieverId,
-        senderName: data.senderName,
-        type: data.type,
-        content: data.content,
-        senderId: data.senderId,
-        postId: data.postId,
-        posturl: data.postUrl,
+        ...data,
         createdAt: new Date(),
       });
       await notification.save();
 
-      console.log('Notification saved:', notification);
+      console.log(SUCCESS_MESSAGES.NOTIFICATION_SAVED, notification);
     } catch (error) {
-      console.error('Error creating notification:', error);
+      console.error(LOG_CONSTANTS.LOG_PREFIXES.DATABASE, ERROR_MESSAGES.NOTIFICATION_SAVE_ERROR, error);
       throw new NotificationSaveError(error.message);
     }
   }
 
   async mentionNotification(data: TagNotificationRequest): Promise<TagNotificationResponse> {
     try {
-      console.log('data Comming :',data);
       const users = await this.userSessionModel.find({
         userId: { $in: data.TagedUserIds },
-        status: 'active',
+        status: DATABASE_CONSTANTS.USER_SESSION_STATUS.ACTIVE,
       });
       await Promise.all(users.map(async (user) => {
           if (!user.fcmToken) return;
 
           const tokens = user.fcmToken.split(',').map((t) => t.trim()).filter(Boolean);
-          console.log(tokens);
           if (!tokens.length) return;
           
-          const message = `${data.username} tagged you in a post`;
+          const message = NOTIFICATION_MESSAGES.MENTION(data.username);
           const postKey=data.postUrl;
-          // console.log(postKey);
-          // console.log(message);
+          
           await this.sendNotificationForMention(
             tokens,
-            'mention',
+            NOTIFICATION_TYPES.MENTION,
             data.postId,
             data.userId,
             postKey,
@@ -156,7 +146,7 @@ export class PostNotifyService {
           await this.createNotificationForMention({
             recieverId: user.userId,
             senderName: data.username,
-            type: 'mention',
+            type: NOTIFICATION_TYPES.MENTION,
             content: message,
             senderId: data.userId,
             postId: data.postId,
@@ -166,13 +156,13 @@ export class PostNotifyService {
       );
 
       return {
-        message: 'Mention notifications sent successfully',
+        message: SUCCESS_MESSAGES.NOTIFICATION_SENT,
         success: true,
       };
     } catch (error) {
       console.error('Error in mentionNotification:', error);
       return {
-        message: 'Failed to send mention notifications',
+        message: ERROR_MESSAGES.FIREBASE_SEND_ERROR,
         success: false,
       };
     }
